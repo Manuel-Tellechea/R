@@ -1,0 +1,564 @@
+---
+output: 
+  pdf_document:
+      toc: yes
+      includes:
+        before_body: ./frontpage.tex
+        in_header: ./preambulo.tex
+        after_body: ./lastpage.tex
+  html_document: default
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+library(formattable)
+library(lubridate)
+library(ggplot2)
+library(ggpmisc)
+library(RColorBrewer)
+library(knitr)
+library(plot3D)
+library(scatterplot3d)
+library(grid)
+library(gridExtra)
+source("ggplottheme.R")
+mod_name<-"Futuros"
+credits<-function(f) {
+  grid.arrange(f,right=textGrob(paste0(mod_name," (C) Synergy Vision - 2017"),
+                                gp=gpar(fontsize=7, fontface="italic", col="gray75"),
+                                rot=90, just = "centre", vjust=-2))#c(0.58,-2)))
+}
+```
+
+# Retornos individuales de valores
+
+## Introducción
+
+Desde la perspectiva de las inversiones, el retorno de un valor a veces es una medida de mayor importancia que el mismo cambio en dólares del precio de nuestra inversión. Para ver por qué, supongamos que alguien ganó $\$500$ en una inversión durante un periodo de 1 año. Sin embargo, si la inversión inicial fue de $\$1.000$, hacer $\$500$ representaría un rendimiento del $50\%$ al cabo de un año. Pero, si por el contrario, la inversión inicial fue de $\$100.000$, hacer $\$500$ solo equivale a un retorno de $0,5\%$. Por esta razón, en este capítulo, nos centraremos en los retornos. 
+
+Cuando se describe las ganancias como el cambio porcentual en el precio, en realidad no se describe el panorama completo, ya que muchos valores ofrecen flujos de efectivo intermedios, como los dividendos para las acciones y los cupones para los bonos. Tales flujos de efectivo pueden ser reinvertidos nuevamente en el mismo valor o incluso en otro distinto, por lo que el rendimiento total que se obtendría al final de la inversión sería distinto al inicialmente proyectado. Por lo tanto, el retorno de un valor debe incluir tanto las ganancias de capital como la reinversión de estos flujos de efectivo intermedios. Debido a que el rendimiento total es una medida del rendimiento que recibimos por mantenere el valor durante todo el periodo de inversión, este tipo de rendimiento también se conoce como el rendimiento del período de tenencia. Cuando sea necesario hacer la distinción, llamaremos al retorno sin el rendimiento de los flujos de efectivo _retorno o rendimiento del precio_.
+
+Comenzaremos describiendo como calcular el retorno o rendimiento de los precios y el retorno total. Luego, para consideraciones estadísticas y de programación, mostraremos cómo calcular los rendimientos totales logarítmicos. A continuación, mostramos cómo acumular rendimientos diarios en devoluciones de varios días utilizando los rendimientos aritméticos (es decir, no logarítmicos) y los rendimientos logarítmicos. Seguidamente demostraremos porque para las acciones que pagan dividendos, el rendimiento total durante un período prolongado puede ser mucho mayor que el rendimiento del precio en el mismo período.
+
+También estaremos revisando como calcular los retornos semanales y mensuales. Una aplicación común de los retornos semanales o mensuales es en el cálculo de las betas utilizadas en el cálculo del costo de capital. Finalmente, veremos cómo comparar los retornos de los valores utilizando los retornos totales.
+
+## Retornos o rendimientos de precios
+
+El cambio en dólares basado únicamente en la diferencia de los precios de cierre de un valor se denomina ganancias de capital y los cambios porcentuales en los precios de cierre de un valor se conoce como retorno o rendimiento del precio. El rendimiento o retorno del precio se mide en un horizonte de inversión determinado (por ejemplo, 1 día, 1 mes, 1 año, etc.). El tiempo de duración del período depende de la aplicación, pero los cálculos de retorno deben ser consistentes de manera que la acumulación de todos los retornos de un día en un año determinado sea igual al retorno o rendimiento anual.
+
+El retorno del precio diario es el cambio porcentual en el precio de un valor en relación con su precio del día anterior. Esto es, 
+
+$$
+PRet_{t} = \frac{P_{t}-P_{t-1}}{P_{t-1}} = \frac{P_{t}}{P_{t-1}}-1
+$$
+
+A continuación utilizaremos la data de la acción de IBM en vista de que paga dividendos y asi, nos permitirá comparar los resultados de los retornos del precio y el retorno total. Para nuestro ejemplo, vamos a calcular los retornos diarios del precio para la acción de IBM desde el 2011 hasta el 2013.
+
+### Paso 1
+
+De aquí en adelante, al inicio de cada capítulo debemos cargar los paquetes `quantmod` y `xts`.
+
+```{r}
+library(quantmod)
+library(xts)
+```
+
+Una vez cargados los paquetes, procederemos a importar la data de la acción de IBM implementando las mismas técnicas que usamos en el capítulo anterior. 
+
+```{r}
+data.IBM <- read.csv("Data/IBMYahoo.csv", header = TRUE)
+date <- as.Date(data.IBM$Date, format = "%Y-%m-%d")
+data.IBM <- cbind(date, data.IBM[,-1])
+data.IBM <- data.IBM[order(data.IBM$date),]
+data.IBM <- xts(data.IBM[2:7], order.by = data.IBM[,1])
+names(data.IBM) <- paste(c("IBM.Open","IBM.High","IBM.Low",
+                           "IBM.Close","IBM.Adjusted","IBM.Volume"))
+data.IBM[c(1:3, nrow(data.IBM))]
+```
+
+### Paso 2
+
+En vista de que el retorno del precio es calculado con los precios de cierre, vamos a seleccionar de la data únicamente la columna que contiene dicha información. 
+
+```{r}
+IBM.prc.ret <- data.IBM[, 4]
+IBM.prc.ret[c(1:3, nrow(IBM.prc.ret)),]
+```
+
+### Paso 3 
+
+Ahora aplicaremos la fórmula para calcular el retorno del precio diario, vista anteriormente. Esta ecuación la podemos calcular en `R` con la función `Delt`, de la librería `quantmod`. 
+
+```{r}
+IBM.prc.ret$IBM.prc.ret <- Delt(IBM.prc.ret$IBM.Close)
+IBM.prc.ret[c(1:3, nrow(IBM.prc.ret)), ]
+```
+
+### Paso 4
+
+Cargada la data, seleccionada solamente la información referente al precio de cierre y calculados los retornos diarios del precio, ahora debemos seleccionar únicamente la información correspondiente al periodo evaluado y podemos limpiar la data, para que sólo contenga los retornos del precio diarios en vista de que ya no necesitamos los precios de cierre. Recordemos que la data de IBM que descargamos de Yahoo Finance posee información de la acción desde el el 31 de diciembre de 2010 hasta el 31 de diciembre de 2013. Por lo que deberemos seleccionar únicamente la data correspondiente al periodo que va del 01 de enero de 2011 hasta el 31 de diciembre de 2013.
+
+```{r}
+options(digits = 3)
+IBM.prc.ret <- IBM.prc.ret[-1, 2]
+IBM.prc.ret[c(1:3, nrow(IBM.prc.ret)), ]
+```
+
+La función `options` permite al usuario establecer y examinar una variedad de opciones globales que afectan la forma en que `R` calcula y muestra sus resultados. Por su parte, el comando `digits` controla el número de dígitos significativos para imprimir al imprimir valores numéricos. Es solo una sugerencia. Los valores válidos son 1 ... 22 con el valor predeterminado 7.
+
+Debemos tener en cuenta que el cálculo retorno del precio anterior calcula ciegamente un retorno del precio de cierre del valor de la empresa IBM. El precio de cierre del valor de una empresa se ve afectado por la división de acciones y no hay ajustes en el precio de cierre que lo refleje.
+
+Observar el precio de cierre por si solo puede no ser suficiente para hacer inferencias de los datos de forma adecuada. Cuando vemos grandes retornos usando únicamente el precio de cierre, tenemos que investigar qué causó que el precio de las acciones se moviera por esa cantidad. Ciertamente es posible que las acciones se muevan en gran cantidad, pero también es posible que tales movimientos de precios sean causados por divisiones de acciones o divisiones de acciones inversas.
+
+## Retorno Total
+
+El retorno de los inversore durante el periodo de tenencia no está limitado a los cambios en el precio del valor. Para las compañías que pagan dividendos, los accionistas que tienen acciones antes de la fecha ex-dividendo reciben pagos en efectivo que pueden reinvertir. De hecho, la reinversión automática de dividendos puede ser una opción para algunos valores. Por lo tanto, el rendimiento total que un accionista puede recibir por un valor que paga dividendos incluye tanto el cambio en el precio del valor que posee como cualquier ingreso generado por los dividendos y la reinversión de esos dividendos en la fecha de expiración. 
+
+Como bien mencionamos anteriormente, este cálculo es conocido como _rendimiento del período de tenencia_ y es calculado de la siguiente manera:
+
+$$
+R_{t} = \frac{P_t + CF_{t} + P_{t-1}}{P_t-1} = \bigg[ \frac{P_{t}}{P_{t-1}}-1\bigg] + \frac{CF_{t}}{P_{t-1}}
+$$
+
+donde $CF_{t}$ es el flujo de caja pagado en el día $t$, $P_{t}$ es el precio del valor en el día $t$ y $P_{t-1}$ es el precio del valor en el día anterior. El primer término se refiere a la apreciación del capital, mientras que el segundo término se refiere al rendimiento por dividendo. Esta forma de la ecuación permite identificar la fuente del retorno, de modo que los inversores que prefieren ganancias de capital o dividendos (por ejemplo, a efectos fiscales) puedan hacer una mejor evaluación del atractivo de la inversión para su objetivo de inversión particular.
+
+En el caso de los cálculos del retorno total diario, el rendimiento del dividendo es cero en las fechas que no sean fechas de ex-dividendo. Este hecho tiene dos implicaciones. Primero, en la mayoría de los días, el retorno del precio y el retorno total son los mismos porque solo tenemos los cambios en la apreciación del capital en esos días. En segundo lugar, para una acción que no paga dividendos, el retorno del precio y el retorno total a lo largo del tiempo son los mismos.
+
+La data descargada de Yahoo Finance incluye el precio de cierre ajustado. Este no solo incorpora ajustes por pagos de dividendos, sino que también incorpora ajustes por división de acciones. La variable ajustada del precio de cierre realiza ajustes retroactivamente, de manera que el precio de cierre y el precio de cierre ajustado después de la última división de acciones o el pago de dividendos sean los mismos.
+
+Dicho esto, vamos a proceder a calcular el retorno total de la acción de IBM desde enero de 2011 hasta diciembre 2013. La última vez que IBM declaró dividendos fue el 29 de octubre de 2013, pagaderos el 10 de diciembre de 2013. Sin embargo, la fecha importante del dividendo para calcular los rendimientos o retornos es la fecha ex-dividendo, que fue el 6 de noviembre de 2013. La fecha ex-dividendo significa que las acciones de IBM se comercializarán sin el dividendo a partir del 6 de noviembre de 2013, de modo que aquellos que compren acciones de IBM el 6 de noviembre de 2013 y posteriores no tendrían derecho al dividendo declarado el 29 de octubre de 2013. 
+
+Debido a que para el periodo de fechas utilizadas en nuestro ejemplo, ya han ocurrido una serie de pagos de dividendos, no podremos ver como para dicho momento el calculo que realizaremos a continuación mostraría que el precio de cierre y el precio de cierre ajustado para IBM a partir del 6 de noviembre de 2013 erán los mismos, pero dichas variables tenían valores distintos antes del 6 de noviembre de 2013.
+
+```{r}
+options(digits = 6)
+data.IBM[715:720]
+```
+
+Sin embargo, las imágenes a continuación son extraidas del portal de Yahoo Finance y muestra los precios actuales de la acción IBM.
+
+![Información de la acción de IBM](./img/IBM-stock-resume.png)
+
+Como podemos apreciar, la fecha ex-dividendo más reciente fue el 09 de agosto de 2018. Lo que significa que las acciones de IBM a partir de dicha fecha se comercializarán sin el dividendo declarado el 09 de agosto. Por lo que a partir de tal fecha, tanto el precio de cierre como el precio ajustado de cierre serán los mismos.
+
+![Precios recientes de la acción de IBM](./img/IBM-stock-prices.png)
+
+![Precios recientes de la acción de IBM](./img/IBM-stock-prices-2.png)
+
+
+Regresando a nuestro ejemplo con la data de IBM, para el periodo determinado al principio, dado que cualquiera que haya comprado acciones el 6 de noviembre de 2013 no tendría derecho al dividendo, esto significa implícitamente que los tenedores de esas acciones no tendrían derecho a una parte del efectivo (activos) de la empresa que se utilizará para pagar los dividendos. Debido a que el valor de los activos de la empresa que el inversionista está comprando el 6 de noviembre de 2013 es menor por la cantidad de dividendo por acción (es decir, el efectivo de $\$1$ tiene un valor de mercado de $\$1$), debemos observar una caída correspondiente en el valor de equidad de IBM. Esta reducción en el valor patrimonial de IBM se traducirá en una caída en el precio de las acciones de IBM manteniendo todo lo demás constante.
+
+Comparando el precio de cierre y el precio de cierre ajustado el 5 de noviembre de 2013, vemos que el precio de cierre es más alto que el precio de cierre ajustado. Esto implica que el rendimiento del precio sería menor que el rendimiento total, que es lo que esperaríamos dado que el rendimiento total es igual al rendimiento del precio más el rendimiento del dividendo.
+
+Veamos ahora como calcular el rendimiento total diario de IBM.
+
+### Paso 1
+
+Como previamente llamamos a los datos de IBM, solo necesitamos verificar que aún estén en la memoria R. Si es así, entonces mantenemos el precio ajustado ajustado o la columna 6 en `data.IBM`.
+
+```{r}
+IBM.ret <- data.IBM[, 5]
+IBM.ret[c(1:3, nrow(IBM.ret)),]
+```
+
+### Paso 2
+
+En este paso vamos a calcular el retorno total. Para ello aplicaremos el comando `Delt` al precio de cierre ajustado. Por ejemplo, el retorno total para el 3 de enero de 2011 es igual a $0,49\%$ $[= (139,91 / 139,23) - 1]$. Tenga en cuenta que, debido al redondeo del precio de cierre ajustado, parecería que la rentabilidad total del 3 de enero de 2011 es inferior a la rentabilidad calculada en la sección anterior. Sin embargo, lógicamente, el rendimiento total es al menos tan grande como el retorno del precio porque el retorno total es igual al retorno del precio en días sin dividendo y el retorno total es más alto que el retorno del precio en días sin dividendo. Esta distinción será evaluada gráficamente más adelante.
+
+```{r}
+IBM.ret$IBM.tot.ret <- Delt(IBM.ret$IBM.Adjusted)
+IBM.ret[c(1:3, nrow(IBM.ret)), ]
+```
+
+### Paso 3
+
+Al igual que en ejemplos anteriores, vamos a eliminar de la data los datos que no necesitamos. En este caso vamos a dejar únicamente la información referente al retorno total y vamos a limitar el número de decimales que queremos mostrar, igualando el comando `digits = 3`. 
+
+```{r}
+options(digits = 3)
+IBM.tot.ret <- IBM.ret[,2]
+IBM.tot.ret[c(1:3, nrow(IBM.ret)),]
+```
+
+```{r}
+options(digits = 7)
+```
+
+
+## Retornos logarítmicos totales
+
+Previamente calculamos los retornos utilizando la función `Delt`, sin embargo tales resultados obtenidos se refieren a retornos aritméticos o simples. Ahora vamos a proceder a calcular los retornos logarítmicos. Este tipo de retornos se utilizan ampliamente en los precios de derivados, entre otras áreas de finanzas.
+
+Los retornos logarítmicos se calculan de la siguiente manera:
+
+$$
+r_{t} = \ln\bigg(\frac{P_{t}}{P_{t-1}}\bigg) = \ln(1+R_{t}) =\ln P_{t} \ -\ \ln P_{t-1},
+$$
+
+donde $\ln$ es el operador logaritmo natural y el resto de las variables se definen de la misma manera que en la ecuación anterior. Por lo tanto, podemos tomar la diferencia de los retornos logarítmicos de los precios para calcular los retornos logarítmicos.
+
+Veamos como se lleva esto a la práctica. Vamos a calcular los retornos logarítmicos totales de la acción de IBM desde enero de 2011 hasta diciembre de 2013.
+
+### Paso 1 
+
+En este caso también necesitaremos utilizar el precio ajustado de cierre. 
+
+```{r}
+IBM.log.ret <- data.IBM[, 5]
+IBM.log.ret[c(1:3, nrow(IBM.ret)), ]
+```
+
+### Paso 2
+
+Ahora procederemos a calcular los retornos logarítmicos, utilizando la ecuación descrita anteriormente. Es decir, los retornos totales se calculan como las diferencias entre el logaritmo natural de los precios de cierre ajustados. Para ello combinaremos las funciones `diff` y `log`. 
+
+```{r}
+IBM.log.ret$IBM.log.ret <- diff(log(IBM.log.ret$IBM.Adjusted))
+IBM.log.ret[c(1:3, nrow(IBM.log.ret)), ]
+```
+
+### Paso 3
+
+Como es costumbre, limpiamos la data y únicamente nos quedamos con la información que queremos mostrar. En este caso solamente nos interesa mostrar los retornos totales logarítmicos.
+
+```{r}
+options(digits = 3)
+IBM.log.ret <- IBM.log.ret[,2]
+IBM.log.ret[c(1:3, nrow(IBM.log.ret)), ]
+options(digits = 7)
+```
+
+#### Retornos aritméticos vs retornos logarítmicos
+
+Por último, antes de avanzar con otro tema, vamos a comparar ambos resultados. Veremos que las diferencias en cada día son bastante pequeñas y difíciles de detectar a simple vista. El resultado a continuación muestra que, en una base de valor absoluto, la mayor diferencia entre las dos medidas de retorno es de $0,36\%$ y la menor diferencia es prácticamente cero.
+
+Utilizando la función `cbind` vamos a combinar ambas variables, para posteriormente compararlas. Adicionalmente estableceremos la opción `na.rm = TRUE` para que `R` calcule un máximo y un mínimo aunque haya una `NA` en los datos (es decir, el valor del 31 de diciembre de 2010 es una NA y causaría un error en `R` sin la opción `na.rm = TRUE`). Adicionalmente utilizaremos la opción `scipen = 100` para aumentar el umbral antes de que `R` convierta la salida en notación científica. Esto nos permite leer la diferencia mínima anterior en decimales en lugar de tener que interpretar los resultados en notación científica, lo que puede ser más difícil de entender. Una vez que hayamos terminado, revertimos la opción de scipen a cero para que la salida de los análisis subsiguientes vuelva a las opciones de visualización predeterminadas.
+
+```{r}
+options(digits = 3, scipen = 100)
+tot.rets <- cbind(IBM.ret, IBM.log.ret)
+tot.rets[c(1:3, nrow(tot.rets)), ]
+```
+
+```{r}
+max(abs(tot.rets$IBM.tot.ret - tot.rets$IBM.log.ret), na.rm = TRUE)
+```
+
+```{r}
+min(abs(tot.rets$IBM.tot.ret - tot.rets$IBM.log.ret), na.rm = TRUE)
+```
+
+```{r}
+options(digits = 7, scipen = 0)
+```
+
+## Retornos acumulados de múltiples días
+
+Al evaluar las inversiones, generalmente nos preocupa el desempeño de las mismas en un horizonte de tiempo particular. Con esto nos referimos a los retornos acumulados de múltiples días. Puede que nos interese determinar los retornos de nuestra inversión durante la semana pasada o el mes pasado o el año pasado. Para capturar completamente los efectos de poder reinvertir dividendos, debemos calcular los retornos diarios y unirlos por períodos más largos. De lo contrario, si simplemente aplicamos la ecuación de retornos totales al usar los precios al comienzo y al final del horizonte de inversión y agregar el dividendo, asumimos que los dividendos se reciben al final del período y que no se obtienen rendimientos adicionales sobre los mismos. Si se supone que los dividendos no se reinvirtieron, entonces este cálculo podría ser apropiado. 
+
+Sin embargo, la alternativa más plausible es realizar la reinversión del dividendo en un valor que tenga un perfil de riesgo-retorno similar a nuestra inversión inicial, y un valor que satisfaga esa condición es el misma valor que generó dichos dividendos. En otras palabras, cuando recibimos el dividendo, este es reinvertido en el mismo valor. Los retornos generados por la inversión en el futuro determinan si la reinversión de los dividendos obtuvo un rendimiento positivo o negativo.
+
+Vamos a visualizar esto a través de un ejemplo, calculando tanto los retornos acumulados aritméticos como los logarítmicos. Su pongamos que deseamos conocer cuánto generó una inversión en Amazon al cierre del 2013, realizada al precio de cierre del 31 de diciembre de 2010.
+
+### Retornos aritméticos acumulados
+
+Para unir múltiples retornos aritméticos, debemos tomar el producto de los retornos brutos diarios. El retorno bruto es uno más el retorno neto $R_{t}$. Es decir, para un retorno acumulativo de 2 días, tomamos $(1 + R_{1}) × (1 + R_{2})$. Para un retorno acumulado de 3 días, entonces tomamos $(1 + R_{1}) × (1 + R_{2}) × (1 + R_{3})$. Por lo tanto, podemos generalizar este cálculo en un horizonte de inversión de $T-días$ como:
+
+$$
+R_{1\ to\ T }= (1 + R_{1})\ + (1+R_{2})\ + (1 + R_{3})\ +\ ...\  + (1 + R_{T})
+$$
+
+Veamos ahora en `R` como realizar tal procedimiento.
+
+#### Paso 1
+
+Para no repetir nuevamente el procedimiento para calcular el retorno total aritmético diario, simplemente llamamos al objeto `IBM.ret` para asegurarnos que todavía tenemos los datos correctos disponibles en la memoria `R`. En caso de que los datos no estén correctos, podemos ejecutar el código que genera `IBM.ret` tal como lo hicimos anteriormente.
+
+```{r}
+IBM.acum <- IBM.ret[,2]
+IBM.acum[c(1:3, nrow(IBM.acum)), ]
+```
+
+#### Paso 2 
+
+En vista de que estamos asumiendo que la inversión se realizó el día 31 de diciembre de 2010, entonces debemos igualar a $0$ el retorno de ese día.
+
+```{r}
+IBM.acum[1,1] <- 0
+IBM.acum[c(1:3, nrow(IBM.acum)), ]
+```
+
+#### Paso 3
+
+En este paso procederemos a calcular el retorno diario bruto, para lo que crearemos el objeto `GrossRet` ($1 + R_{T}$).
+
+```{r}
+IBM.acum$GrossRet <- 1 + IBM.acum$IBM.tot.ret
+IBM.acum[c(1:3, nrow(IBM.acum)), ]
+```
+
+#### Paso 4
+
+Una vez calculados los retornos diarios brutos, ahora procederemos a calcular el producto de los mismos. Para ello utilizaremos la función `cumprod`.
+
+```{r}
+IBM.acum$GrossCum <- cumprod(IBM.acum$GrossRet)
+IBM.acum[c(1:3, nrow(IBM.acum)), ]
+```
+
+#### Paso 5
+
+Por último, debemos tener en cuenta que el valor anterior sigue siendo un número de retorno bruto. Por lo tanto, es necesario restar uno del `GrossCum` para calcular el rendimiento neto acumulado o `NetCum`. El número de `NetCum` se interpreta como el porcentaje de retorno de la fecha de inversión, 31 de diciembre de 2010. Esto significa que una inversión realizada en acciones de IBM a fines de 2010 habría regresado $34,7\%$ para fines de 2013.
+
+
+```{r}
+IBM.acum$NetCum <- IBM.acum$GrossCum - 1
+IBM.acum[c(1:3, nrow(IBM.acum)),]
+```
+
+
+### Retornos logarítmicos acumulados
+
+Una forma alternativa de calcular los retornos acumulados de diferentes períodos es tomar la suma de los retornos logarítmicos diarios. Esto es,
+
+$$
+\begin{array}{rl}
+r_{1\ to\ T} &= \ln((1 + R_{1}) \times (1 + R_{2}) \times\ ...\ \times (1+R_{T}))\\
+&= r_{1} + r_{2} +\ ...\ + r_{T}\\
+&= \displaystyle\sum_{t=1}^{T} r_{t}
+\end{array}
+$$
+
+Veamos ahora como ejecutamos este cálculo en `R`.
+
+#### Paso 1
+
+Al igual que mencionamos en el cálculo de los retornos aritméticos, nuestro primer paso será llamar al objeto `IBM.log.ret`, que contiene los retornos totales logarítmicos diarios, para evaluar que los datos estén correctos. En caso de que haya algún problema con los datos, debemos realizar nuevamente el proceso para realizar los cálculos.
+
+```{r}
+IBM.logcum <- IBM.log.ret
+IBM.logcum[c(1:3, nrow(IBM.logcum)), ]
+```
+
+#### Paso 2
+
+Al igual que en el procedimiento de los retornos aritméticos, debemos igualar los retornos del 31 de diciembre de 2010 a cero, ya que estamos calculando las devoluciones como si hubiéramos comprado las acciones de IBM al cierre el 31 de diciembre de 2010.
+
+```{r}
+IBM.logcum[1,1] <- 0
+IBM.logcum[c(1:3, nrow(IBM.logcum)), ]
+```
+
+#### Paso 3
+
+A continuación sumaremos los valores en la variable `IBM.log.ret` usando el comando `sum`.
+
+```{r}
+logcumret <- sum(IBM.logcum$IBM.log.ret)
+logcumret
+```
+
+#### Paso 4
+
+Por último, ahora convertiremos el retorno logarítmico acumulado obtenido en retorno aritmético acumulado, ya que a diferencia de este último, el primero podría no tener ninguna interpretación práctica. Para hacer esto, tomaremos el exponencial del retorno logarítmico usando el comando `exp`.
+
+```{r}
+cumret <- exp(logcumret) - 1
+cumret
+```
+
+Como podemos observar, el resultado obtenido de calcular los retornos logarítmicos acumulados fue de $34,7\%$, que es idéntico al rendimiento acumulado calculado utilizando el retorno aritmético. Sin embargo, podemos ver que se necesitan menos pasos y es un procedimiento mucho más simples para calcular los retornos de varios períodos. Sin embargo, si necesitamos mostrar valores acumulativos diarios, sería mejor seguir la técnica analizada cuando acumulamos los retornos aritméticos.
+
+### Comparando retornos de precios y retornos totales
+
+Continuaremos utilizando los datos de precios de la acción de IBM, para mostrar como el retorno total genera mayores rendimientos que los retornos de precios, para una acción que paga dividendos.
+
+#### Paso 1
+
+En vista de que hemos combinado los datos de precios y los retornos totales anteriormente en el objeto `tot.rets`, solo necesitamos llamar los datos. Luego, cambiaremos el nombre de los datos para identificar mejor las variables como `prc.ret` y `tot.ret`.
+
+```{r}
+IBM.Ret <- cbind(IBM.prc.ret,IBM.ret[,2])
+names(IBM.Ret) <- c("prc.ret", "tot.ret")
+IBM.Ret[c(1:3, nrow(IBM.Ret)), ]
+```
+
+#### Paso 2
+
+A continuación estableceremos los valores para el 31 de diciembre de 2010 igual a cero.
+
+```{r}
+IBM.Ret$prc.ret[1] <- 0
+IBM.Ret$tot.ret[1] <- 0
+IBM.Ret[c(1:3, nrow(IBM.Ret)), ]
+```
+
+#### Paso 3
+
+Ahora calcularemos los retornos brutos del precio (`gross.prc`) y los retornos brutos totales (`gross.tot`).
+
+```{r}
+IBM.Ret$gross.prc <- 1 + IBM.Ret$prc.ret
+IBM.Ret$gross.tot <- 1 + IBM.Ret$tot.ret
+IBM.Ret[c(1:3, nrow(IBM.Ret)), ]
+```
+
+#### Paso 4
+
+Como último paso, antes de graficar el resultado, vamos a calcular los retornos de precios acumulados (`cum.prc`) y los retornos totales acumulados (`cum.tot`) usando la función `cumprod`.
+
+```{r}
+IBM.Ret$cum.prc <- cumprod(IBM.Ret$gross.prc)
+IBM.Ret$cum.tot <- cumprod(IBM.Ret$gross.tot)
+IBM.Ret[c(1:3, nrow(IBM.Ret)), ]
+```
+
+#### Paso 5
+
+Por último, graficamos las variables `cum.prc` y `cum.tot`. En primer lugar trazaremos la variable `cum.tot` y luego la variable `cum.prc`. Utilizando el comando `abline`, agregaremos una línea horizontal en $\$1$ para que sea mucho más fácil interpretar cuando la inversión está en terreno positivo o negativo. 
+
+De los resultados obtenidos anteriormente, podemos ver que para fines de 2013, la reinversión de los dividendos arroja un rendimiento del $34,7\%$, mientras que la apreciación del precio por sí sola produce el $27,8\%$.
+
+```{r}
+y.range <- range(IBM.Ret[,5:6])
+y.range
+```
+
+```{r}
+plot(IBM.Ret$cum.tot, type = "l",
+     auto.grid = FALSE, xlab = "Date", 
+     ylab = "Value of Investment ($)", 
+     ylim = y.range, minor.ticks = FALSE,
+     main = "IBM Stock Performance Based On
+     Total Returns and Price Returns
+     December 31, 2010 - December 31, 2013")
+
+lines(IBM.Ret$cum.prc, type = "l",
+      lty = 3)
+
+abline(h = 1, col = "black")
+legend("topleft", col = c("black", "black"),
+       lty = c(1,3), c("Value Based On Total Return",
+                       "Value Based On Price Return"))
+```
+
+
+```{r}
+IBM.Ret.dataframe <- data.frame(IBM.Ret)
+
+f<- ggplot(IBM.Ret.dataframe,
+           aes(x = index(IBM.Ret),
+               y = IBM.Ret.dataframe$cum.tot)) +
+    geom_line(aes(colour = "Totales"), size=1) +
+    labs(title = "IBM Stock Performance 
+         Based On Total Returns and Price Returns 
+         December 31, 2010 - December 31, 2013",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(x = index(IBM.Ret),
+                  y = IBM.Ret.dataframe$cum.prc, 
+                  colour="Precios"), size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Retornos", values = 
+                          c("Totales" = "black",
+                            "Precios" = "orange")) + vision 
+credits(f)
+
+```
+
+Como podemos observar, el valor de una inversión basada en el retorno total de IBM (línea negra) es igual o mayor que el valor de una inversión basada en el retorno del precio de IBM (línea naranja) Las dos líneas se superponen entre sí al comienzo de la tabla a principios de 2011 porque no hubo fechas ex-dividendo en ese período de tiempo. IBM paga dividendos trimestrales, por lo que tendría cuatro ex-date cada año. Por lo tanto, la brecha entre la línea negra y la línea naranja aumenta con el tiempo a medida que IBM realiza más pagos de dividendos.
+
+## Retornos semanales
+
+En los cálculos anteriores hemos utilizado los retornos diarios. Sin embargo, podríamos también utilizar retornos de frecuencias menores, como por ejemplo retornos semanales.
+
+Para realizar este cálculo utilizaremos la data de la acción de Amazon. Para transformar la data de Amazon de diaria a semanal, necesitaremos las librerías `quantmod` y `xts`, así como también la función `to.weekly`.
+
+```{r}
+data.AMZN <- read.csv("Data/AMZNYahoo.csv", header = TRUE)
+date <- as.Date(data.AMZN$Date, format = "%Y-%m-%d")
+data.AMZN <- cbind(date, data.AMZN[, -1])
+data.AMZN <- data.AMZN[order(data.AMZN$date),]
+data.AMZN <- xts(data.AMZN[,2:7], order.by = data.AMZN[,1])
+# Cambio del orden de las columnas
+data.AMZN <- data.AMZN[, c(1,2,3,4,6,5)]
+names(data.AMZN) <- paste(c("AMZN.Open","AMZN.High","AMZN.Low",
+                      "AMZN.Close","AMZN.Volume","AMZN.Adjusted"))
+data.AMZN[c(1:3, nrow(data.AMZN)), ]
+```
+
+```{r}
+class(data.AMZN)
+```
+
+Como pudimos observar, en esta ocasión es necesario cambiar el orden de las columnas, ya que la función `to.weekly` trabaja con las columnas bajo el siguiente orden: "Open, High, Low, Close, Volume, Adjusted". La data descargada de Yahoo viene con la información en el mismo orden, a excepción de las últimas dos columnas que vienen invertidas. Por lo que si no realizamos tal cambio, los cálculos no serán correctos. Una vez importada la data de la acción de Amazon, procedamos ahora a convertir los datos diarios en semanales.
+
+### Paso 1
+
+Primero, crearemos un objeto llamado `wk` y cargaremos en él la data anteriormente importada.
+
+```{r}
+wk <- data.AMZN
+wk[c(1:3, nrow(wk)), ]
+```
+
+### Paso 2
+
+Seguidamente convertiremos los datos diarios en datos semanales utilizando la función `to.weekly`.
+
+```{r}
+AMZN.weekly <- to.weekly(wk)
+AMZN.weekly[c(1:3, nrow(AMZN.weekly)),]
+```
+
+### Paso 3
+
+Una vez transformados los datos, ahora procedemos a seleccionar únicamente la columna del precio ajustado para calcular los retornos.
+
+```{r}
+AMZN.weekly <- AMZN.weekly[, 6]
+AMZN.weekly[c(1:3, nrow(AMZN.weekly)), ]
+```
+
+### Paso 4
+
+Utilizando la función `Delt`, ahora procedemos a calcular los retornos semanales calculando el cambio porcentual en el precio ajustado del viernes de una semana en particular y el precio ajustado del viernes de la semana anterior. Como tal, lo que calculamos es un retorno total de viernes a viernes. Debemos tener en cuenta que si el viernes es un día sin negociación, el retorno semanal se calculará en función del precio del último día de negociación de dicha semana en relación con el precio del último día de negociación de la semana anterior.
+
+```{r}
+AMZN.weekly$Ret <- Delt(AMZN.weekly$wk.Adjusted)
+AMZN.weekly[c(1:3, nrow(AMZN.weekly)),]
+```
+
+### Paso 5
+
+Observando la data anterior, podemos notar que la primera observación tiene un `NA`. Como tal, este dato no es necesario y podemos excluirlo de nuestra salida final. Además, la única variable que necesitamos es la variable de retorno. Entonces, como último paso, vamos a eliminar la primera fila y mantener la segunda columna.
+
+```{r}
+AMZN.weekly <- AMZN.weekly[-1, 2]
+AMZN.weekly[c(1:3, nrow(AMZN.weekly)), ]
+```
+
+
+## Retornos Mensuales
+
+Otra forma de obtener los retornos es a través de los retornos mensuales, y su implementación es similar a la de los retornos semanales.
+
+### Paso 1
+
+Primero, crearemos un objeto llamado `mo` y cargaremos en él la data anteriormente importada.
+
+```{r}
+mo <- data.AMZN
+mo[c(1:3, nrow(mo)), ]
+```
+
+### Paso 2
+
+Seguidamente convertiremos los datos diarios en datos mensuales utilizando la función `to.monthly`.
+
+```{r}
+AMZN.monthly <- to.monthly(mo)
+AMZN.monthly[c(1:3, nrow(AMZN.monthly)),]
+```
+
+

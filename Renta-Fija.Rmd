@@ -1,0 +1,2566 @@
+---
+output: 
+  pdf_document:
+      toc: yes
+      includes:
+        before_body: ./frontpage.tex
+        in_header: ./preambulo.tex
+        after_body: ./lastpage.tex
+  html_document: default
+fontsize: 12pt
+---
+
+```{r}
+library(formattable)
+library(lubridate)
+library(ggplot2)
+library(ggpmisc)
+library(RColorBrewer)
+library(knitr)
+library(plot3D)
+library(scatterplot3d)
+source("ggplottheme.R")
+library(grid)
+library(gridExtra)
+mod_name<-"Renta Fija"
+credits<-function(f) {
+  grid.arrange(f,right=textGrob(paste0(mod_name," (C) Synergy Vision - 2017"),
+                                gp=gpar(fontsize=7, fontface="italic", col="gray75"),
+                                rot=90, just = "centre", vjust=-2))#c(0.58,-2)))
+}
+```
+
+
+# Introducción
+
+Los instrumentos financieros pueden clasificarse de acuerdo al tipo de derechos, por así llamarlos, que sus tenedores tienen sobre los emisores de éstos. Cuando hablamos de un monto fijo de dinero, como derecho, se dice que estamos en presencia de instrumentos de deuda. Una característica de suma importancia  de estos instrumentos es que, el emisor está obligado a pagar en primera instancia la deuda correspondiente a ellos y posteriormente el resto de la deuda. Los valores representativos de deuda (letras del Tesoro, bonos, obligaciones, etc.) son también conocidos como instrumentos de _renta fija_. Estos instrumentos son emisiones de deuda que por lo general realizan organismos gubernamentales y las corporaciones. Vienen en una gran cantidad de diferentes vencimientos y características de pagos.
+
+En este tipo de inversión el emisor está obligado a realizar los pagos en una cantidad y un período de tiempo previamente establecidos. Su nombre se debe al conocimiento previo de los pagos a recibir durante la vida del instrumento. Estos intrumentos generan flujos de dinero conocidos a lo largo del tiempo, lo que permite calcular la rentabilidad aproximada de la inversión. Sin embargo, a pesar de que el instrumento sea llamado de Renta Fija, no quiere decir que la rentabilidad siempre será positiva. Puede ser negativa (Los precios suben, bajan o se mantienen).
+
+# Características de los instrumentos de deuda
+
+A pesar de que cada uno de los instrumento de este tipo guarda ciertas peculiaridades que lo diferencia del resto, tienen una serie de características comunes a todos los instrumentos de deuda.
+
+## Emisor
+
+Una de las características más importantes de los instrumentos de deuda es conocer la naturaleza del _emisor_. Se pueden identificar tres grandes emisores de este tipo de deuda: corporaciones, gobiernos municipales y el gobierno y sus agencias. La deuda emitida por las corporaciones es conocida como deuda privada o corporativa, mientras que la deuda emitida por el gobierno y sus agencias es conocida como deuda pública. Sin embargo, existen diferencias significativas entre cada uno de ellos. 
+
+## Madurez
+
+No es más que el número de años a través de los cuales el emisor del instrumento se ha comprometido a cumplir las condiciones y obligaciones del contrato. La _madurez_ se refiere a la fecha en que el emisor cancelará el principal del instrumento y por ende la deuda dejará de existir.
+
+La _madurez_ es un elemento de suma importancia debido a tres razones fundamentales. La primera, porque indica el tiempo esperado de vida de este. Segunda, su rendimiento depende substancialmente del vencimiento. Y tercero, la volatilidad del instrumento está muy asociada a su madurez.
+
+El mercado de instrumentos de deuda se clasifica en términos de tiempo hasta el vencimiento del instrumento. Aquellos instrumentos cuyo plazo de vencimiento es menor o igual a un año pertenecen al _mercado de dinero_. Por su parte, los instrumentos de deuda con plazos de vencimiento mayores a un año son negociados en el _mercado de capitales_.
+
+
+## Cupón y Nominal o Valor par
+
+El _cupón_ del bono se refiere a los pagos periódicos que efectúa el emisor del bono y que recibe el tenedor del mismo por la contraprestación realizada al emisor. El pago en cupón en términos monetarios por concepto de interés es igual a la tasa de interés multiplicada por el _valor nominal_ del bono. 
+
+$$
+Cupón\ (\$) = nominal\ * tasa\ cupón
+$$
+
+La frecuencia de pago de cupones puede variar en cada instrumento de deuda. La más utilizada en los bonos es la tasa semestral.
+
+El nivel del cupón de cualquier bono, generalmente, es cercano al nivel del rendimiento de una emisión similar para el momento en que es emitido y su tamaño tiene una gran influencia en la volatilidad del precio. Por ejemplo, a mayor cupón, menor será el cambio en el precio del bono como respuesta a cambios en las tasas de interés del mercado.
+
+El _valor nominal_ del bono o _valor par_ se refiere a la cantidad por la cual fue emitido. Este es el pago que debe realizar el emisor al vencimiento del bono.
+
+La tasa cupón, la madurez o vencimiento y el valor par o nominal del bono son parte de la escritura de fianzas, que es el contrato entre el emisor y el tenedor de bonos.
+
+Ahora bien, no todos los instrumentos de deuda realizan pagos de cupones periódicamente. Son conocidos como instrumentos _cero cupón_. Los tenedores de estos obtienen el rendimiento a través de la diferencia entre el precio de compra y el valor par el mismo. También hay otros tipos de obligaciones que pagan los intereses al vencimiento del instrumento, es decir, son instrumentos con pago de cupones establecidos pero que son acumulados y pagaderos en la madurez de ellos. Estos son conocidos como _instrumentos de cupón acumulado_.
+
+Dentro de los instrumentos de deuda que pagan cupones podemos encontrar algunos de ellos que no necesariamente poseen una tasa fija. Son conocidos como _instrumentos de tasa variable_ y sus cupones son calculados en función a una tasa de referencia más una prima o spread. Esta tasa por lo general es la tasa LIBOR o la tasa de rentabilidad de las letras del Tesoro o T-Bill. Esta tasa por lo general se ajusta cada tres meses. La fórmula típica para calcular la tasa cupón en estos instrumentos al momento de ser ajustada es:
+
+$$
+Tasa\ de\ referencia\ \pm\ margen\ establecido
+$$
+
+Siendo el margen establecido aquel que acordó pagar el emisor, sobre la tasa de referencia (en caso de ser positivo) o por debajo de esta en caso contrario. El margen establecido es expresado en términos de puntos básicos (un punto básico equivale a $0,0001$ o $0,01\%$). 
+
+
+## Provisiones
+
+El emisor de un instrumento de deuda se compromete en devolver el principal a la fecha de vencimiento acordada. Este puede acordar reembolsar el total del principal en un pago único a la fecha de vencimiento, es decir, que no está obligado a efectuar ningún reembolso de capital de manera anticipada. Cuando estamos en presencia de un instrumento con esta característica, se dice que tienen una madurez tipo "bullet". De igual manera el emisor puede estar obligado a retirar una parte específica de una emisión cada año. Esto se conoce como un requisito de fondo de amortización _(sinking fund requirement)_.
+
+Tambíen podemos encontrar instrumentos que tienen un calendario de reembolsos de capital que se van realizando previamente a el vencimiento del instrumento. Dichos instrumentos de deuda se consideran instrumentos de amortización.
+
+
+## Disposiciones de Llamada y Reembolso
+
+Si el prospecto de un bono contiene una provisión de llamada, el emisor conserva el derecho de retirar la deuda, total o parcialmente, antes de la fecha de vencimiento programada. Esta característica permite al emisor, ante una caída de tasas en el mercado, reemplazar la emisión de bonos por una emisión con intereses más bajos. La característica de llamada tiene un valor añadido para las corporaciones y los municipios, ya que les permite en un futuro liberarse de las restricciones que frecuentemente caracterizan sus bonos (sobre la disposición de activos o colateral). Con respecto a las corporaciones que deseen incluir esta característica en sus prospectos, les permite utilizar altos niveles de efectivo que puedan tener en sus cuentas para retirar los bonos pendientes o tal vez deseen reestructurar sus balances. Sin embargo, esta disposición de llamada es perjudicial para los inversores, ya que corren el riesgo de perder un bono de alto cupón cuando las tasas comienzan a disminuir.
+
+En vista de que la característica de llamada beneficia al emisor y pone al inversor en desventaja, estos bonos ofrecen rendimientos más altos que los bonos que no incluyen dicha claúsula en sus prospectos. Dicha diferencia en los rendimientos tenderá a crecer cuando existan expectativas de caída en las tasas del mercado y se estime que el emisor se vea tentado a reemplazar una deuda de alto cupón con un nuevo bono de bajo cupón.
+
+Sin embargo, existen limitaciones en cuanto al derecho del emisor a aplicar la claúsula de llamada, conocida como el período de protección. Este establece el período durante el cual el emisor no puede ejecutar la llamada de la deuda. Otra restricción muy común es la prohibición del `reembolso` de los bonos durante un cierto número de años. Reembolsar una emisión de bonos significa rescatar bonos con fondos obtenidos mediante la venta de una nueva emisión de bonos.
+
+## Disposiciones de Venta
+
+Del lado del prestamista o tenedor del bono también existen provisiones sobre este tipo de instrumentos. La más común de ellas es la opción de venta (`put`), que garantiza al inversor la opción de vender al emisor el instrumento a un precio específico (`put price`) y en unas fechas determinadas.
+
+La ventaja de la disposición de venta para el inversionista es que si después de la fecha de emisión del instrumento de deuda los tipos de interés del mercado suben por encima de la tasa cupón del instrumento, el inversionista puede obligar al prestatario a canjear el bono al precio de venta y luego reinvertir el producto a una tasa mayor.
+
+
+# Instrumentos del Mercado de Dinero
+
+Los intrumentos de _renta fija_ que presentan plazos de vencimiento menores a un año son negociados en el _mercado de dinero_. Recordemos que este es el mercado de más corto plazo, donde también hay mayor liquidez y volumen de transacciones. El principal consumidor de este mercado son las empresas y fondos. Los instrumentos aquí negociados son emitidos en el mercado primario a través de una red de telecomunicaciones por el tesoro, las corporaciones y los intermediarios financieros que quieren obtener financiamiento a corto plazo. Sus activos son de bajo riesgo y alta liquidez. El emisor vende el instrumento para recaudar capital en corto tiempo, mientras que el comprador lo hace para generar beneficio sobre fondos adicionales en un período de corto plazo y bajo nivel de riesgo.
+
+Los instrumentos financieros aquí negociados incluyen valores emitidos por el Departamento del Tesoro (en concreto, bonos del Tesoro), títulos de las agencias federales (notas de descuento y otros productos adicionales), instituciones de depósito (certificados de depósito negociables y las aceptaciones bancarias), compañías de seguros (acuerdos de financiamiento), papeles comerciales, pagarés de mediano plazo, acuerdos de recompra, valores municipales a corto plazo, valores respaldados por hipotecas a corto plazo y valores respaldados por activos.
+
+A través de este módulo iremos pasando por estos instrumentos financieros, sin embargo, nos apegaremos más a aquellos instrumentos emitidos por el Departamento del Tesoro Estadounidense y sus agencias federales, por temas de volumen, liquidez e importancia, que lo convierten en el mayor prestatario del mundo y prácticamente el principal eje del mercado monetario. De hecho, los tipos de interés de las Letras del Tesoro sirven como tasas de referencia a corto plazo en la economía de Estados Unidos, así como también en los mercados monetarios internacionales. Todos los instrumentos emitidos por el Departamento del Tesoro, están respaldados netamente en la Fe y capacidad crediticia del mismo, razón por la cual son considerados intrumentos de "cero riesgo".
+
+
+## Letras del Tesoro (Treasury bills)
+
+Las Letras del Tesoro son títulos de deuda pública (renta fija) a corto plazo emitidos por el Tesoso del Estado como modo de financiación. Son emitidos con un vencimiento inicial de 4, 13, 26 o 52 semanas. Como los certificados del tesoro no pagan intereses, se venden con un descuento del valor a la par, y la ganancia para un inversionista que tiene un certificado hasta su vencimiento es la diferencia entre el valor a la par y el precio pagado. Su atractivo para el inversionista radica en que están respaldados por el gobierno federal y, por tanto, están casi libres de riesgos crediticios (incumplimiento). Son altamente líquidas, lo que quiere decir que son sencillas de vender con costos bajos de comisión. Históricamente, el valor a la par de los certificados del tesoro era de un mínimo de `10.000` dólares, pero ahora es de `1.000` dólares y en múltiplos de `1.000`. 
+
+Las Letras del tesoro existentes se pueden vender en el mercado secundario a través de agentes de valores gubernamentales, quienes obtienen una utilidad al comprar los valores a un precio un poco menor del que lo venden.
+
+Otra característica de estos instrumentos es que son sujeto de impuestos federales, sin embargo están excentos de impuestos estatales y locales.
+
+A diferencia de los bonos que pagan intereses de cupón, los bonos del Tesoro se cotizan sobre una base de descuento bancario y no sobre una base de precios. Su rendimiento se calcula de la siguiente manera
+
+
+$$
+Rendimiento = \left(\frac{valor\ par - precio\ de\ compra}{valor\ par}*\frac{360}{fecha\ de\ vencimiento - fecha\ de\ emisión}\right)*100
+$$
+
+
+Veamos un ejemplo del cálculo del rendimiento de una Letra del Tesoro. Para ello supongamos que la fecha de subasta es el 21/02/2017, su fecha de emisión es el 23/02/2017 y su fecha de vencimiento es el 25/05/2017. Su precio es de $\$995,854444$ y su valor par es de $\$1.000$, Vamos a determinar el rendimiento de la misma.
+
+$$
+\begin{array}{rl}
+Rendimiento &= \left(\frac{1.000-995,854444}{1.000}*\frac{360}{91}\right)*100\\
+Rendimiento &= (0,004145\ *\ 3,95604395) * 100\\
+Rendimiento &= 1,64\%
+\end{array}
+$$
+
+Ahora vamos a ver como se puede realizar el mismo cálculo en `R`.
+
+```{r}
+# Creación de una función que calcule el yield de una letra del tesoro
+treasury_bill_yield <- function(par_value, price, end_date, emission_date){
+  # conversión de la variable en un objeto tipo "date"
+  end <- as.Date(end_date, '%Y/%m/%d') 
+  # conversión de la variable en un objeto tipo "date"
+  emission <- as.Date(emission_date, '%Y/%m/%d')
+  # cálculo de la diferencia de días entre las fechas
+  days <- as.numeric(difftime(end, emission, units = c("days"))) 
+  # cálculo del yield
+  yield <- (((par_value - price)/par_value)*(360/(days))) 
+  # cálculo porcentual 
+  yield * 100 
+}
+
+# variable con el valor par de la letra del tesoro
+par_value <- 1000
+# precio de mercado
+price <- 995.854444
+# fecha de vencimiento con formato "año/mes/día"
+end_date <- "2017/05/25" 
+# fecha de emisión con formato "año/mes/día"
+emission_date <- "2017/02/23" 
+
+# Implementación de la función con los parámetros
+treasury_bill_yield(par_value, price, end_date, emission_date)
+```
+
+Si conocemos el rendimiento ($yield$) de la Letra del Tesoro, su precio se puede calcular resolviendo en primera instancia la fórmula del rendimiento dado el descuento ($D = valor\ facial - precio$) de la siguiente manera: 
+
+$$
+\begin{array}{rl}
+D &= yield\ *\ valor\ facial\ *\ \left(\frac{fecha\ de\ vencimiento - fecha\ de\ emisión}{360}\right)\\
+\text{el precio se puede expresar como}\\
+Precio &= valor\ facial\ - D
+\end{array}
+$$
+
+Continuando con los datos del ejercicio anterior:
+
+$$
+\begin{array}{rl}
+D &= 0,0164\ *\ 1.000\ *\ \left(\frac{91}{360}\right)\ = \$4,14556\\
+\text{entonces tenemos que}\\
+P &= \$1.000\ - \$4,14556\\
+P &= \$995,854444
+\end{array}
+$$
+
+El rendimiento cotizado sobre una base de descuento bancario no es una medida significativa de la rentabilidad de retener una Letra del Tesoro, ya que esta medida está basada en el valor nominal y no en la cantidad real invertida.
+
+Sin embargo hay una medida que busca hacer la cotización de la Letra del Tesoro más comparable a los cupones de los bonos del Tesoro. Esta medida es conocida como rendimiento equivalente de bonos (bond-equivalent yield) y hace que el rendimiento cotizado de la Letra del Tesoro sea más comparable a los rendimientos de las notas y bonos del Tesoro que utilizan una base de convención de días $\frac{real}{real}$.
+
+$$
+Rendimiento\ equivalente = \frac{T(yield)}{360 - t(yield)}\\
+$$
+donde,
+
+T = número actual de dias en el calendario,
+
+yiel = rendimiento de la Letra del Tesoro y,
+
+t = días hasta el vencimiento (fecha de vencimiento - fecha de emisión)
+
+Continuando con los datos del ejercicio anterior:
+
+$$
+\begin{array}{rl}
+Rendimiento\ equivalente &= \frac{365(0,0164)}{360 - 91(0,0164)}\\
+Rendimiento\ equivalente &= 0,0167 = 1,67\%
+\end{array}
+$$
+
+Por lo general, las subastas de estos instrumentos se llevan a cabo a mediados de cada trimestre. El tesoro anuncia la fecha, la cantidad de fondos que necesita y el vencimiento de las letras que va a emitir. Al momento de la subasta, las instituciones financieras presentan las licitaciones a su nombre y en nombre de sus clientes. Durante cada oferta los intermediarios compran las letras y luego las redistribuyen entre los clientes (otras instituciones financieras) que deseen comprarlas.
+
+Los agentes sirven como intermediarios en el mercado secundario al establecer un contacto entre compradores y vendedores de letras del tesoro, además de participar en la comercialización de estas. Los inversionistas también pueden comprar letras a través del programa _Treasury Direct_ [http://www.treasurydirect.gov/](http://www.treasurydirect.gov), y pedir al tesoro que deduzca la compra de su cuenta bancaria. De igual forma, pueden reinvertir los ingresos recibidos al vencimiento de las letras en bonos del tesoro recién emitidos.
+
+Los precios de los instrumentos del tesoro se pueden encontrar en línea en [http://www.investinginbonds.com/](http://www.investinginbonds.com/). Este sitio web presenta la diferencia entre el precio de licitación y el solicitado en diferentes vencimientos. Los rendimientos de estos instrumentos se pueden consultar en [http://federalreserve.gov/releases/H15/](http://federalreserve.gov/releases/H15/).
+
+
+## Instrumentos de las agencias del gobierno
+
+Los títulos de las agencias gubernamentales de los Estados Unidos pueden clasificarse según el tipo de emisor: aquellos emitidos por las agencias federales y los emitidos por las empresas patrocinadas por el gobierno. Las agencias federales son de propiedad total del gobierno de los Estados Unidos y han sido autorizadas para emitir valores directamente en el mercado.
+
+### Asociación hipotecaria nacional del gobierno (Government Nactional Mortagage Association) "Ginnie Mae" 
+
+Emite bonos y usa los ingresos para comprar hpotecas aseguradas por la Dirección federal para la vivienda (FHA, Federal Housing Administration) y la Administración de veteranos (VA, Veterans Administration). Estos bonos están respaldados tanto por las hipotecas compradas con los ingresos como por el gobierno federal.
+
+[https://www.ginniemae.gov/pages/default.aspx/](https://www.ginniemae.gov/pages/default.aspx/)
+
+### Asociación federal de hipotecas nacionales (Federal Home Loan Mortagage Association) "Freddie Mac"
+
+Emite bonos y usa los ingresos para comprar hipotecas convencionales. Estos bonos no están respaldados por el gobierno federal, pero tienen un riesgo de crédito muy bajo.
+
+[http://www.freddiemac.com/](http://www.freddiemac.com/)
+
+### Asociación federal de hipotecas nacionales (Federal National Mortagage Association) "Fannie Mae"
+
+Es una corporación federal propiedad de inversionistas individuales. Emite bonos y utiliza los ingresos para comprar hipotecas residenciales. Estos bonos no tienen respaldo del gobierno federal, y al igual que los bonos de _Freddie Mac_, tienen un riesgo de crédito muy bajo.
+
+[http://www.fanniemae.com/portal/index.html/](http://www.fanniemae.com/portal/index.html/)
+
+
+### Sistema Federal de Crédito Agrícola
+
+El Sistema Federal de Crédito Agrícola (**FFCS**) emite notas de descuento que no son garantizadas. Los vencimientos oscilan entre overnight y los 365 días, siendo la mayoría con vencimientos inferiores a 90 días. Los valores nominales mínimos son de $\$5.000$ con incrementos de $\$1.000$. Todas las notas de descuento tienen liquidación en efectivo.
+
+### Corporación Federal de Hipotecas Agrícolas
+
+La Corporación Federal de Hipotecas Agrícolas (**Farmer Mac**) emite notas de descuento con vencimientos que van desde overnight a 365 días y se ofrecen de forma continua.
+
+### Asociación de Comercialización de Préstamos Estudiantiles
+
+La Asociación de Comercialización de Préstamos Estudiantiles (**Sallie Mae**) emite deuda de tipo flotante, ya sea vinculada a la tasa de bonos del Tesoro de Estados Unidos a 91 días o, en menor medida, a la tasa LIBOR a 3 meses, notas de descuento e intereses a corto plazo de vencimiento con claúsulas de llamada (call).
+
+## Papeles Comerciales
+
+Son instrumentos de deuda a corto plazo emitido sólo por empresas reconocidas y muy confiables, y por lo regular no está asegurado. Casi siempre se emiten para dar liquidez o financiar la inversión de una empresa en inventario y cuentas por cobrar. Es una alternativa para los préstamos bancarios a corto plazo.
+
+La denominación mínima del papel comercial casi siempre es de $\$100.000$. Las denominaciones típicas son en múltiplos de un millón de dólares. Por lo regular, los vencimientos son entre 20 y 45 días, pero pueden ser hasta de un día o de 270 días. El rendimiento del papel comercial es un poco más alto que el de un certificado del tesoro con el mismo vencimiento, porque representa cierto riesgo de crédito y tiene menos liquidez.
+
+Todos los inversores en papeles comerciales están expuestos al riesgo de crédito. El riesgo que enfrenta el inversionista es que el prestatario no pueda emitir papel nuevo al vencimiento. Este riesgo se conoce como riesgo de refinanciación. Como salvaguardia contra este riesgo, los emisores de papel comercial aseguran líneas de respaldo de crédito a veces llamadas "mejora de liquidez".
+
+Al igual que las letras del Tesoro, el papel comercial es un instrumento de descuento. La diferencia entre el valor de vencimiento y el precio pagado, es el interés devengado por el inversionista. Aunque algunos papeles comerciales se emiten como un instrumento que genera intereses.
+
+## Certificados de Depósito Negociables (CD)
+
+Un certificado de depósito (`CD`) es un activo financiero emitido por una institución depositaria que indica una suma especificada de dinero que se ha depositado con ellos. Las instituciones depositarias emiten `CDs` con el fin de recaudar fondos para financiar sus actividades. La denominación mínima es $\$100.000$, aunque la más común es de un millón de dólares o más. Los vencimientos de los `CD` son de dos semanas a un año. Son emitidos a su valor a la par.
+
+Los `CD` ofrecen una ganancia en forma de intereses, además de la diferencia entre el precio en el que se rescata (o se vende en el mercado secundario) y el precio de compra.
+
+Los flujos de efectivo de estos instrumentos están denominados en dólares y pueden clasificarse en cuatro tipos, de acuerdo a la entidad emisora. El primer tipo son los `CD` emitidos por los bancos nacionales. En segundo lugar, los `CD` que se denominan en dólares, pero se emiten fuera de los Estados Unidos. Son conocidos como `Eurodollar CDs` o `Euro CDs`. Un tercer tipo que se conocen como `CD Yankee` ya que es denominado en dólares y emitido por un banco no estadounidense con una sucursal en los Estados Unidos. Por último, los `CDs de ahorro` emitidos entidades de ahorros y préstamos, así como también cajas de ahorros.
+
+## Aceptaciones bancarias
+
+Indica que un banco acepta la responsabilidad de un pago en el futuro. Se utilizan normalmente para las transacciones comerciales internacionales. Sus vencimientos van desde 30 a 270 días. El riesgo de las aceptaciones bancarias es semejante al de los CDN emitidos por los bancos comerciales, sin embargo, como están respaldadas por el banco y la empresa importadora, es considerado un poco más bajo.
+
+A menudo las aceptaciones bancarias tienen un descuento y la empresa exportadora las vende antes de su vencimiento, existe un mercado secundario para las mismas. 
+
+La creación de una aceptación bancaria permite al importador recibir bienes de un exportador sin enviar un pago de inmediato. La venta de la aceptación crea un financiamiento para el exportador.
+
+
+# Instrumentos del Mercado de Capitales
+
+El mercado de capitales es el sector del mercado financiero donde se tranzan instrumentos financieros de largo plazo emitidos por corporaciones y gobiernos. Este mercado suele abarcar valores con vencimientos mayores a un año. Su propósito es atender necesidades de inversión. Las transferencias de recursos realizadas en este mercado originan el crecimiento del sector real. Como bien hemos ido describiendo, existen dos tipos de valores del mercado de capitales: aquellos que representan porciones o cuota de participación (denominadas acciones), emitidas por corporaciones y aquellos representativos de deuda, emitidas por corporaciones y gobiernos.
+
+Este tipo de valores incluye bonos, valores respaldados por activos,notas y notas de mediano plazo. La diferencia entre un bono y una nota tiene que ver con el tiempo hasta el vencimiento de cada una de ellas. Comúnmente, una nota es un título de deuda con un vencimiento de 10 años o menos, mientras que un bono es un título de deuda con un vencimiento superior a 10 años.
+
+En este módulo nos referiremos exclusivamente a los bonos, ya que las acciones fueron tratadas en el módulo de renta variable.
+
+Antes de ver los distintos instrumentos que podemos encontrar en el mercado de capitales vamos a detenernos en el concepto de lo que es un bono. 
+
+Un bono es un contrato donde el emisor recibe un préstamo y se compromete a cumplir ciertas condiciones de generación de renta durante un período de tiempo hasta pagar el préstamo. Tradicionalmente el emisor "vende" el contrato para pagar un cupón (paga el costo del capital). Es decir, paga intereses sobre el capital recibido de parte del suscriptor del contrato. Por su parte, el suscriptor paga por el contrato y recibe los intereses, u otros beneficios, durante un período de tiempo definido. Son emitidos con vencimientos mayores a un año, por lo que no pertenecen al mercado de dinero, sino al mercado de capitales.
+
+El emisor de un bono está obligado a pagar intereses o cupones de forma periódica y el valor nominal o principal del bono al vencimiento. Un emisor debe poder demostrar que sus flujos de efectivo futuros serán suficientes para cubrir los pagos de los cupones y el principal a los tenedores del bono. Los inversionistas considerarán la compra de bonos cuyo pago es cuestionable sólo si el rendimiento esperado de la inversión en bonos es suficiente para compensar el riesgo.
+
+Ahora bien, al igual que en el mercado de dinero, en el mercado de capitales podemos diferenciar los instrumentos de acuerdo a la naturalez del emisor. Los principales emisores de bonos son las corporaciones, los gobiernos federales, estatales, municipales y sus agencias.
+
+## Instrumentos emitidos por gobiernos y sus agencias
+
+### Pagarés del Tesoro (Treasury notes)
+
+Se emiten con vencimientos de entre 1 y 10 años. Por lo general, realizan pagos de cupones semestrales. Se emiten en denominaciones de $\$1.000$ o más y se venden inicialmente cerca del valor par. El 30 de junio de 2001, los pagarés del Tesoro representaban 1,5 billones de dólares (52%) de los valores negociables del Tesoro en circulación.
+
+
+### Bonos del Tesoro (Treasury bonds)
+
+Son títulos de cupón con vencimientos de más de 10 años. Las denominaciones van de $\$1.000$ en adelante. A diferencia de los pagarés del Tesoro, algunas emisiones tienen cláusulas de cancelación (call provisions) que les permiten ser rescatados durante un periodo especificado. En octubre de 2001, el tesoro suspendió la emisión de bonos a 30 años y ha recurrido a bonos a 10 años para financiar déficits presupuestarios. El 30 de junio de 2001, los bonos del Tesoro representaban 657 mil millones de dólares (22%) de los valores negociables del Tesoro en circulación. 
+
+Al igual que con otros bonos, el rendimiento de la tenencia de un bono del tesoro depende de la tasa cupón y la diferencia entre el precio de compra y el precio de venta. 
+
+Las subastas de estos bonos se llevan a cabo a mediados de cada trimestre. Las licitaciones se pueden presentar de forma competitiva o no competitiva. Las primeras especifican precio y cantidad a comprar. Mientras que las segundas sólo señalan la cantidad que se está dispuesto a adquirir. El tesoro acepta todas la licitaciones competitivas hasta el punto en el que se logra la cantidad de fondos deseada.  
+
+Los precios de los instrumentos del tesoro se pueden encontrar en línea en [http://www.investinginbonds.com/](http://www.investinginbonds.com/). Este sitio web presenta la diferencia entre el precio de licitación y el solicitado en diferentes vencimientos. Los rendimientos de estos instrumentos se pueden consultar en [http://federalreserve.gov/releases/H15/](http://federalreserve.gov/releases/H15/).
+
+
+### Bonos del tesoro indexados a la inflación
+
+Uno de los mayores riesgos financieros que históricamente han enfrentado los ahorristas ha sido la inflación. Cuando hay exceso de dinero en busca de pocos bienes, las necesidades de los ahorristas incrementan a la par de lo que incrementa el costo de vida, mientras que sus recursos financieros se reducen a medida que las valoraciones de activos se degradan. Un incremento en la inflación afecta de manera directa las acciones, ya que los precios más altos de los insumos presionan a la baja las ganancias y los tipos de interés más altos ejercen presión a la baja sobre las relaciones precio/ganancias. Por su parte, los portafolios de renta fija, también sufren por incrementos de la inflación, ya que el aumento de los rendimientos del mercado hace bajar los precios de los bonos, mientras que la aceleración de la inflación tiende a hacer caer el rendimiento ajustado por inflación de los instrumentos en efectivo, o incluso a convertirlo en negativo.
+
+Los TIPS (Treasury inflation-protected securities) son bonos que contractualmente están garantizados para proteger y aumentar el poder adquisitivo. El Tesoro de los Estados Unidos ajusta el capital de TIPS sobre la base de los cambios en el índice de precios al consumidor (IPC) diariamente de manera que al vencimiento los inversionistas mantienen su poder adquisitivo original.
+
+En 1997 el tesoro ha estado emitiendo de forma periódica bonos indexados por la inflación y hasta el año 2001 había emitido más de 145 mil millones de doláres en estos títulos. Los TIPS sirven como referencia de precios, como instrumentos de cobertura, activos de reserva, y activos de inversión. Por lo general, la tasa cupón de estos es más baja que la tasa ofrecida por los bonos del tesoro, pero el valor principal aumenta en la cantidad de la tasa inflacionaria en los Estados Unidos de cada seis meses.
+
+Los TIPS ofrecen a los inversionistas individuales e institucionales, con objetivos de largo plazo, la posibilidad de obtener rendimientos mayores, una volatilidad moderada en precios y una correlación baja o negativa con respecto a otra clase de activos. Estos intrumentos sirven a los gestores de carteras como herramientas para alcanzar sus metas de inversión a largo plazo, además de reducir el riesgo durante el proceso de inversión. 
+
+El principal y el interés pagado a los inversores por los TIPS fluctúa en función del nivel del IPC. De manera que el poder adquisitivo de cada pago sea fijo. Lo que genera como consecuencia que el rendimiento real del TIP sea fijado.
+
+
+### Bonos de ahorro estadounidense
+
+Los bonos de ahorro no negociables se ofrecen únicamente a individuos y organizaciones selectas. Sólo se les permite comprar una cantidad especificada en un año. Actualmente se venden da la mitad de su valor nominal de $30.000. Existen diferentes denominaciones de estos instrumentos. 
+
+Los bonos de la serie EE son bonos de descuento puro y su vencimiento varía cada cierto tiempo, pero por lo general son de 17 años. Tienen claúsulas de llamada y permiten intercambio por bonos de ahorro de la serie HH. Están disponibles en denominaciones pequeñas (la mínima es de $50) y se pueden comprar en los bancos comerciales e instituciones financieras. Utilizan una tasa flotante basada en el mercado, que se determina cada 6 meses y tiene una vigencia de 6 meses. Dicha tasa es igual al 90% del rendimiento promedio del mercado durante los 6 meses anteriores en valores del Tesoro a cinco años. 
+
+Los bonos de la serie HH vencen en 20 años y pagan intereses semestrales, pero se pueden redimir en cualquier momento a su precio de compra. Estos sólo están disponibles para operaciones de cambio de las series elegibles EE. Se pueden obtener del Departamento del Tesoro o de uno de los 12 bancos de Reserva Federal. El interés de los bonos HH está sujeto anualmente al impuesto federal sobre la renta. 
+
+Los bonos de la serie I son un tipo nuevo de bonos de ahorro. Estos bonos ganan intereses a una tasa compuesta que se establece cada 1 de mayo y 1 de noviembre. La tasa está compuesta principalmente por dos componentes: una tasa fija que permanece igual durante la vida del bono y una tasa variable igual a la tasa de inflación durante los seis meses anteriores medidas según el índice de precios al consumidor. 
+
+
+Los títulos del Tesoro de los Estados Unidos son obligaciones del gobierno de los Estados Unidos emitidas por el Departamento del Tesoro. Sirven como referencia de precios, como instrumentos de cobertura, activos de reserva, y activos de inversión. Existe una percepción de que los inversores en valores del Tesoro no están expuestos al riesgo de crédito. Sin embargo, están expuestos al riesgo de tasa de interés y al riesgo de reinversión, y a su vez los inversionistas en bonos de tasa fija están expuestos al riesgo de inflación.
+
+### Bonos de las Agencias Federales
+
+Los títulos de las agencias federales se pueden clasificar de acuerdo al tipo de emisor o instituciones que relacionadas con el gobierno federal y empresas patrocinadas por el gobierno. Las agencias federales que proporcionan crédito para ciertos sectores del mercado de crédito emiten dos tipos de valores: las obligaciones y los valores respaldados por hipotecas / activos.
+
+Los bonos emitidos por las agencias federales proporcionan fondos para apoyar actividades como viviendas, exportación e importación, servicio postal, entre otras.
+
+Tal como mencionamos anteriormente, entre las agencias que emiten este tipo de instrumentos podemos mencionar: la Asociación hipotecaria nacional del gobierno (Ginnie Mae), la Asociación federal de hipotecas nacionales (Freddie Mac), la Asociación federal de hipotecas nacionales (Fannie Mae), el Banco de Exportación e Importación de los Estados Unidos, la Autoridad del Valle de Tennessee, la Corporación de Crédito de Productos Básicos, la Administración de Vivienda de Agricultores, la Administración de Servicios Generales, la Administración Marítima, la Administración de Electrificación Rural, el Banco de Teléfono Rural, la Administración de Pequeños Negocios y la Autoridad de Tránsito del Área Metropolitana de Washington.
+
+A excepción de los valores emitidos por la Corporación de Asistencia Financiera del Crédito Agrícola, los valores de las agencias federales no están respaldados por la fe completa y el crédito del gobierno de los Estados Unidos, como es el caso de los títulos del Tesoro. Por ende, los inversores que compran estos instrumentos están expuestos al riesgo de crédito. La diferencias entre los rendimientos de estos valores y los títulos del Tesoro con vencimientos iguales reflejan la percepción de riesgo percibido en cuanto a crédito y liquidez.
+
+
+### Bonos municipales
+
+De igual manera que el gobierno federal, los gobiernos estatales y locales utilizan la emisión de bonos para financiar déficits presupuestarios. Estos bonos son conocidos como **bonos municipales**.
+
+Ambos tipos de bonos están sujetos a cierto grado de riesgo, sin embargo es bajo. Se han dejado de pagar menos de 0,5% de todos los bonos municipales emitidos desde 1940. Los pagos de intereses ofrecidos son en su mayoría semestrales. Su denominación mínima es casi siempre de 5.000 dólares. Estos bonos si tienen un mercado secundario, sin embargo es mucho menos atractivo que el de los bonos del tesoro.
+
+Casi todos los bonos municipales contienen una cláusula de rescate, que permite al emisor volver a comprar los bonos a un precio específico antes de su vencimiento. Los rendimientos ofrecidos por estos bonos son diferentes a los rendimientos ofrecidos por los bonos del tesoro con iguales vencimientos, ya que deben pagar una prima de riesgo como compensación por la posibilidad de incumplimiento y otra ligera prima como compensación por ser menos líquidos. Sin embargo los ingresos obtenidos por estos bonos están excentos de impuestos federales.
+
+Los bonos municipales pueden clasificarse como:
+
+- **bonos de oblgaciones generales**: sus pagos están respaldados por la capacidad fiscal del gobierno municipal emisor. Casi todos estos bonos son emitidos por agencias con poder fiscal ilimitado.
+
+- **bonos pagaderos con ingresos**: son respaldados en base a los ingresos de los proyectos para los cuales se emiten o por los beneficios de un impuesto específico. En muchos casos casos, estos bonos son emitidos por agencias que esperan vender sus servicios, pagar los gastos requeridos y con el sobrante cumplir los pagos requeridos de la deuda pendiente. Algunos de estos bonos se emiten para financiar erogaciones de capital de servicios públicos (agua, gas o electricidad), otros se utilizan para la compra o construcción de instalaciones industriales que se arrendarán a empresas (bonos de desarrollo industrial, IDBs). 
+
+Por lo general los bonos municipales se emiten como bonos en serie; un grupo especificado con anticipación vence un año después de la emisión, otro grupo vence dos años después de la emisión, otro tres años después de la emisión, y así sucesivamente.
+
+Otra característica resaltante de estos instrumentos, es que no necesitan estar registrados en la SEC antes de la emisión al público. Por lo general el gobierno federal delega la mayor parte de la regulación de este mercado a las autoridades locales y estatales, en conjunto con la Municipal Securities Rulemaking Board.
+
+## Bonos corporativos
+
+Son valores de deuda a largo plazo emitidos por las corporacones. Su denominación mínima es de 1.000 dólares y por lo general su vencimiento va entre 10 y 30 años. Los bonos corporativos se pueden colocar entre los inversionistas mediante una oferta pública o una colocación privada.
+
+En la _oferta pública_, una corporación contrata a un banco de inversión para que suscriba los bonos. El suscriptor evalúa las condiciones de mercado e intenta determinar el precio en el que sea posible vender los mismos, así como también el tamaño apropiado de la oferta. El objetivo es establecer un precio suficientemente alto para satisfacer al emisor, así como también un precio suficientemente bajo para poder colocarlos todos.
+
+El emisor debe registrarse ante la SEC y presentar una propuesta donde explique el tamaño planeado de la oferta, su situación financiera y el uso que le dará a los fondos obtenidos en la subasta. Por su parte, el suscriptor distribuye la propuesta entre otros bancos de inversión a los que invita a ayudarle a colocar los bonos y posteriormente intentará colocarlos recién emitidos entre inversionistas institucionales.
+
+En la _oferta privada_, la colocación no tiene que estar registrada en la SEC, sin embargo, la compañía debe dar a conocer su información financiera para convencer a los posibles compradores. El emisor puede contratar a una firma de valores para colocar los bonos porque esas firmas casi siempre identifican mejor a los inversionistas institucionales que puedean estar interesados comprar una deuda colocada de forma privada.
+
+El nivel general de incumplimientos de pago en los bonos corporativos depende las condiciones económicas. Cuando se tiene una economía fuerte, las empresas generan más ingresos y tienen mejor capacidad para cubrir los pagos de deudas. Si por el contrario, la economía es débil, algunas empresas no generan suficientes ingresos para cubrir sus gastos operativos ni de deuda, por lo que no cumplen con los bonos.
+
+Las agencias calificadoras clasifican los bonos corporativos. Aquéllos con una calificación alta se pueden colocar a precios más altos, ofreciendo rendimientos más bajos y por lo tanto, las corporaciones logran un costo de financiamiento más bajos.
+
+Los bonos corporativos tienen un mercado secundario donde los inversionistas que los compran los pueden vender a otros si prefieren no conservarlos hasta su vencimiento. El valor de los bonos corporativos en el mercado secundario rebasa los 5 billones de dólares. Los bonos que emiten corporaciones grandes y reconocidas son altamente líquidos, mientras que los bonos emitidos por corporaciones pequeñas en volúmenes bajos son menos líquidos.
+
+Los bono corporativos se anotan en un mercado extrabursátil. El mercado de bonos independiente lo llevan intermediarios de bonos que cumplen la función de correduría de unir a compradores y vendedores. Adicionalmente, estos intermediarios tienen existencias de bonos así que pueden servir como contrapartda en una transacción. Más de 1.000 bonos están registrados en la NYSE y se negocian a través del Sistema automatizado de bonos (ABS, Automated Bond System).
+
+Las cotizaciones de los precios de los bonos corporativos se pueden consultar en línea en [http://www.investinginbonds.com/](http://www.investinginbonds.com/). Uno de los sitios web de correduría de bonos más conocidos es [http://www.tradebonds.com/](http://www.tradebonds.com/), que indica los precios de los bonos de una muestra grande de corredores. Este sitio está dirigido a inversionistas que compran grandes cantidades, mientras que otros sitios, como [http://www.schwab.com](http://www.schwab.com) y [http://www.etrade.com/global.html/](http://www.etrade.com/global.html/), están dirigidos a inversionistas pequeños.
+
+#### Clasificación
+
+##### Bonos Hipotecarios
+
+Se conoce como bonos hipotecarios a aquellos instrumentos de deuda respaldados por una prenda de propiedad específica. En caso de incumplimiento, dicha propiedad pasa a manos de los tenedores de bonos, quienes pueden venderla para obtener su porción correspondiente. Por lo general, en los contratos de este tipo de bonos, existen claúsulas de protección para los inversionistas, que prohiben la venta o empeño de la propiedad de garantía. 
+
+Los mayores emisores de este tipo de bonos son las compañías eléctricas, compañías telefónicas y compañías de gas. 
+
+##### Obligaciones quirografarias
+
+Son obligaciones generales de la corporación emisora que no tienen garantía específica, a parte de la solvencia de la compañía. Para proteger a los tenedores de dichos bonos, el contrato limitará las emisiones futuras de la compañía, estén o no aseguradas.
+
+##### Obligaciones quirografarias subordinadas
+
+Cuando hay más de una emisión quirografaria en circulación, se puede especificar una jerarquía. En este sentido, una obligación quirografaria subordinada es una obligación quirografaria con menor jerarquía a que la obligación no subordinada. Esto quiere decir, que ante un caso de bancarrota, los derechos menores se tomarán en cuenta hasta que se satisfagan los mayores.
+
+##### Valores respaldados por activos
+
+Son instrumentos cuyo que en lugar de hipotecas y partes de propiedad, reunen obligaciones de deuda como préstamos revolventes de tarjetas de crédito, créditos automovilísticos, créditos estudiantiles y créditos para equipo, de manera que sirvan como garantía de respaldo.
+
+Estos créditos se agrupan y se venden valores que representan una parte de la propiedad del lote. Una compañía de servicio reúne los pagos de hechos por los deudores durante un periodo y luego paga a cada propietario el porcentaje que le corresponde.
+
+Los principales riesgos que presentan estos instrumentos son el riesgo de incumplimiento y el riesgo de pago adelantado.
+
+## Clasificación de los Bonos
+
+Más allá de que sean emitidos por entes privados o entes gubernamentales, existen algunas clasificaciones generales que podemos hacer de este tipo de instrumentos:
+
+### Clasificación en cuanto a la estructura
+
+- **Bonos Bullet**: tienen cupones que se componen sólo de interés, pero amortizarán el capital en una sola fecha, llamada vencimiento (Bonos de Venezuela).
+
+- **Bonos con amortizaciones**: van pagando su nominal de forma programada (Bonos de Venezuela).
+
+- **Bonos Cero Cupón**: son bonos que se emiten a un descuento muy alto de su valor nominal y no pagan cupones hasta su vencimiento. Para la empresa emisora, estos bonos tienen la ventaja de que requieren de un flujo de efectivo nulo durante su vida. Además, a la empresa se le permite deducir el descuento amortizado como gasto en intereses para propósitos de impuestos federales al ingreso, aún cuando no paga intereses. Esto aumenta el flujo de efectivo de la empresa. La demanda de estos bonos ha sido suficientemente alta para que las empresas puedan emitirlos a un costo más bajo que los bonos regulares.
+
+- **Bonos de rédito (Accrual bonds)**: no realizan pago de cupones periódicos a lo largo de la vida del instrumento, sin embargo, la diferencia radica en que este tipo de bono se vende originalmente al precio de adquisición a la par o cerca de ella. Hay una tasa cupón fija, pero los intereses de los cupones se acumulan a una tasa compuesta de maduración.
+
+- **Bonos con cupón diferido**: son aquellos cuyo pago inicial de interés se difiere a otro período. Los pagos de los cupones aumentan a una tasa compuesta durante el período diferido, y son pagados como pago único al final de ese período. Luego de que el período inicial diferido haya pasado, se paga con la tasa cupón regular por el resto del bono.
+
+### Clasificación en cuanto al tipo de cupones
+
+- **Bonos estructurados**: sus cupones no están necesariamente expresados en una tasa de interés fija, sino que es determinada en función de otros parámetros. Combinan renta variable, renta fija y productos derivados. 
+
+- **Bonos indexados a la inflación**: conocidos como `TIPS` (Treasury inflation-protected securities) y mencionados anteriormente, están dirigidos a inversionistas que quieren una garantía de que los rendimientos sobre sus inversiones se mantendrán con el aumento de precios con el tiempo.
+
+- **Bonos con tasa flotante (Floating Rate Bonds)**: son instrumentos de menor vencimiento que están basados sobre un principal (nominal) y cuyos cupones son calculados en función a una tasa de referencia más una prima o spread. El bono tiene cupones variables o flotantes porque dependen de una tasa de referencia de corto plazo (LIBOR o la tasa de rentabilidad de las letras del Tesoro o T-Bill). Esta tasa por lo general se ajusta cada tres meses. La fórmula típica para calcular la tasa cupón en estos bonos, al momento de ser ajustada, es:
+
+$$
+Tasa\ de\ referencia\ \pm\ margen\ establecido
+$$
+
+Siendo el margen establecido aquel que acordó pagar el emisor, sobre la tasa de referencia (en caso de ser positivo) o por debajo de esta en caso contrario. El margen establecido es expresado en términos de puntos básicos (un punto básico equivale a $0,0001$ o $0,01\%$).
+
+### Bonos que incluyen derivados
+
+- **Bonos de amortización anticipada (redimibles)**: el emisor puede recomprar el bono a un precio prefijado antes del vencimiento establecido. Incorpora un producto derivado, que es un Call (Opción de compra/recompra).
+
+- **Bonos convertibles**: otorgan al tenedor la opción de devolver el bono y recibir a cambio un número específico de acciones de la empresa emisora. Incluye un derivado dentro, una opción call comprada. El precio del bono se ve afectado por la evolución del precio de las acciones. En el momento de la emisión de una obligación convertible, el emisor concede efectivamente al tenedor de bonos el derecho de comprar la acción ordinaria a un precio igual a:
+
+$$
+\frac{\text{valor par del bono convertible}}{\text{ratio de conversión}}
+$$
+
+
+- **Bonos canjeables**: son aquellos que tienen la opción de ser canjeados por algún otro activo financiero (acciones de la empresa, acciones de otra empresa u otros bonos).
+
+- **Bonos con opción de venta**: tienen la opción de ser devueltos al emisor a cambio del valor nominal o un determinado precio en unas fechas futuras. Incluyen un producto derivado, en este caso un Put.
+
+- **Bonos extendibles y retractables**: tienen más de una fecha de vencimiento. El extendible da derecho a su tenedor de extender la fecha original del vencimiento y tener un vencimiento mayor del instrumento. El retractable, por su parte, da derecho al bonista de adelantar la recuperación del principal antes de la fecha original de vencimiento en una fecha específica.
+
+### Mercado de eurobonos
+
+El término de eurobono se aplica a bonos que se ofrecen fuera del país del prestatario y fuera del país en cuya moneda se han denominado los valores. Ofrece ventajas sustanciales para muchos emisores y compradores de bonos porque el mercado de eurobonos no está regulado ni paga impuestos. Los bonos de Venezuela cotizan en la bolsa de Luxemburgo y de Frankfurt. 
+
+El emisor de los eurobonos puede elegir la moneda en la que se denominen los bonos. Los pagos periódicos de cupones serán en dicha divisa, y ademas el costo del financiamiento de la emisión de los bonos dependerá de la moneda elegida. La mayoría de los eurobonos tienen un cupón fijo y un plazo de vencimiento.
+
+
+[https://www.bourse.lu/home/](https://www.bourse.lu/home/)
+
+[http://en.boerse-frankfurt.de/](http://en.boerse-frankfurt.de/)
+
+
+### Bonos Chatarra
+
+Se llaman así a aquellos bonos que se considera que representan el mayor riesgo para un inversionista. Alrededor de dos terceras partes de las emisiones de bonos chatarra se usan para financiar adquisiciones. Aunque a los bonos recién expedidos les asignan calificaciones de chatarra, un gran número de instituciones financieras están dispuestas a comprarlos por el rendimiento más alto que ofrecen.
+
+Los bonos chatarra representan alrededor de 25% del valor de todos los bonos corporativos y alrededor de 5% del valor de todos los bonos (incluidos los del tesoro y los municipales). Los principales inversionistas en este tipo de bonos son los fondos mutualistas, compañías de seguros de vida y fondos de pensión. Los individuos suman alrededor de una décima parte de todos los inversionistas en el mercado de bonos chatarra. El mercado secundario de estos bonos en Estados Unidos es operado por unos 20 intermediarios de bonos que generan un mercado para los bonos chatarra.
+
+En los últimos años, gobiernos y corporaciones han expedido en todo el mundo bonos de poca calidad, llamados bonos chatarra globales. Su demanda ha sido alta debido a los altos rendimientos ofrecidos por estos, en general a los inversionistas les atraen los bonos que emiten otros países (conocidos como bonos soberanos) por la capacidad del país de cumplir con las obligaciones de deuda. 
+
+Además de la naturaleza del emisor, existen muchas otras categorias en las cuales se podrían clasificar los bonos.
+
+# Riesgo de los instrumentos de Renta Fija
+
+El rendimiento que se obtiene de un instrumento de renta fija, desde el día que se compra hasta el día de su venta puede descomponerse en dos partes: la primera, como el valor de mercado del instrumento cuando se vende y una segunda parte, como el total de los flujos obtenidos durante el periodo de tenencia más cualquier ingreso adicional producto de la reinversión de los flujos recibidos. Ahora bien, diferentes factores pueden afectar a cualquiera de las partes e inclusive a ambas. El riesgo de un instrumento de renta fija puede ser definido como una medida del impacto de dichos factores sobre su rendimiento.
+
+## Tipos de Riesgos asociados
+
+Todo instrumento de renta fija está expuesto a factores exógenos y endógenos que pueden afectar su rendimiento. Entre estos podemos encontrar los siguientes: riesgo de mercado o de tasas de interés, riesgo de reinversión, riesgo de crédito, riesgo de liquidez, riesgo político, riesgo de volatilidad, riesgo económico, riesgo de inflación, entre otros.
+
+### Riesgo de Mercado
+
+El precio de un instrumento de renta fija se mueve en dirección contraria a los cambios en las tasas de interés. Si los tipos de interés aumentan, el precio del instrumento tenderá a disminuir; si por el contrario las tasas de interés disminuyen, entonces el precio del instrumento se incrementará.
+
+El tenedor de estos instrumentos se verá expuesto a este riesgo en caso de que deseara venderlo antes de su fecha de vencimiento, ya que ante un cambio en los tipos de interés en contra, el precio de su instrumento se verá afectado y pudiese sufrir una pérdida de capital producto de tal cambio. Este riesgo también es conocido como riesgo de tasas de interés y es uno de los mayores riesgos al que está expuesto un inversor en el mercado de renta fija.
+
+Para poder controlar el riesgo de tipo de interés, es necesaria su cuantificación. La medida más comúnmente utilizada del riesgo de tasa de interés es la duración. La duración nos permite conocer el cambio porcentual aproximado en el precio de un bono o una cartera de bonos, producido por una variación de 100 puntos base en las tasas de interés.
+
+### Riesgo de reinversión
+
+El ingreso producto de la reinversión de los flujos recibidos durante el período de tenencia de un instrumento de renta fija, se puede ver afectado por los tipos de interés vigentes en la economía al momento de la reinversión. En caso de que los tipos de interés disminuyeran al momento de la reinversión, los rendimientos obtenidos por reinversión de los flujos serían menores, producto de que las reinversiones se tendrían que hacer a tasas menores.
+
+### Riesgo de crédito
+
+Este riesgo puede ser entendido bajo dos enfoques: el primero, como riesgo de que el emisor no pueda cumplir con su obligación (también conocido como Riesgo de Default o incumplimiento) y, el segundo, como el riesgo de una posible disminución en el valor del bono y/o un peor desempeño que el de otros instrumentos comparables, en vista de que el mercado requiere un margen más alto producto de una mayor percepción del riesgo percibido  o que las compañías calificadoreas le asignen al instrumento una calificación más baja.
+
+### Riesgo de inflación
+
+Este riesgo surge como la variación en el valor de cada flujo recibido dado una tasa de inflación. Con esto nos referimos a que si un inversor compra un bono con el cual espera realizar una determinada tasa de cupón, pero resulta que la tasa de inflación es mayor a esta, entonces el inversor tendrá que el valor del flujo o poder de compra del mismo ha decaído.
+
+### Riesgo de liquidez
+
+La liquidez recoge la facilidad con que un título se puede comprar o vender de manera eficiente en el mercado. Indica que tan rápido puede convertirse un activo en efectivo sin incurrir en altos costes.
+
+La principal medida de liquidez es el tamaño del diferencial (spread) entre el precio de oferta y el precio de cotización cotizado por un distribuidor. Cuanto más amplio es el diferencial bid-ask, mayor es el riesgo de liquidez.
+
+Los inversores que planean mantener un bono hasta el vencimiento y no tienen la necesidad de marcar una posición en el mercado, no se preocupan por este riesgo. Sin embargo, para los inversores institucionales que planean mantener una emisión hasta su vencimiento pero que deben marcar periódicamente en el mercado, este riesgo si les representa una preocupación, ya que al marcar una posición en el mercado, el valor se revalúa en la cartera en función de su precio de mercado actual.
+
+### Riesgo político
+
+Es el riesgo en el que incurren prestamistas o inversores por la posibilidad de que se restrinja o imposibilite la repatriación de capitales, intereses, dividendos, etc., debido a razones exclusivamente políticas. La mayoría de estos riesgos surgen por la falta de estabilidad política, cambios de gobierno e ineficientes sistemas jurídicos.
+
+La posibilidad de cualquier acción política o jurídica que afecte adversamente el valor de una garantía se conoce como riesgo político o legal.
+
+A veces el gobierno puede declarar la retención u otros impuestos adicionales sobre un bono o declarar un bono exento de impuestos sujeto a impuestos. 
+
+Los países emergentes suelen tener problema políticos, con las siguientes consecuencias: expropiación, guerra y conmoción civil, incumplimiento de contrato por parte del Estado, riesgo legal y ambiente constitucional.
+
+### Riesgo país
+
+Es aquel que asumen las entidades financieras, las empresas o el Estado, por el posible impago de operaciones comerciales o préstamos que realizan con el sector público o privado de otro país.
+
+El riesgo país se entiende que está relacionado con la eventualidad de que un estado soberano se vea imposibilitado o incapacitado de cumplir con sus obligaciones con algún agente extranjero, por razones fuera de los riesgos usuales que surgen de cualquier relación crediticia.
+
+La medición del riesgo país es determinada por unos índices que proporcionen la clasificación de los países a través de unos indicadores acerca de su situación política y económica. Es elaborado principalmente por las revistas Euromoney e Institutional Investor o por firmas clasificadores como Moody’s Investor Service o Standard & Poor’s Corporation. Para su cálculo, realizan ejercicios cruzando las diversas variables económicas que reflejan el comportamiento macro y micro del país, y a su vez combinan con algunos elementos subjetivos de apreciación, que hacen variar los resultados de una u otra. Como existe un componente subjetivo, el riesgo país no es un indicador exacto que describa la realidad sin tendencias, sino un indicador que refleja las perspectivas “objetivas” de las Calificadoras.
+
+Ahora bien, cuando se desea determinar el valor mínimo de rentabilidad que debe buscarse en un instrumento de renta fija extranjero, los inversionistas suelen utilizar el EMBI+ (Emerging Markets Bonds Index o Indicador de Bonos de Mercados Emergentes), el cual es calculado por J.P. Morgan Chase, con base en el comportamiento de la deuda externa emitida por cada país. Este índice mide la diferencia (spread) que existe entre la tasa de interés que pagan los títulos de deuda de cualquier país y la de los bonos del Tesoro de los Estados Unidos (ente que se considera tiene el menor riesgo del mercado financiero internacional) para el mismo plazo y similares características.
+
+El riesgo país se mide en puntos básicos (cada 100 puntos equivalen a 1%), por lo que, cuando se escucha que el índice de riesgo país se ubica en 150 puntos, dicha cantidad representa que el país emergente paga 1,5% adicional sobre la tasa de los bonos americanos.
+
+Cuanta menor certeza exista de que el país honre sus obligaciones, más alto será el EMBI de ese país, y viceversa.
+
+[http://www.ambito.com/economia/mercados/riesgo-pais/info/?id=20](http://www.ambito.com/economia/mercados/riesgo-pais/info/?id=20)
+
+
+### Riesgo Soberano
+
+A diferencia del riesgo país, que engloba la deuda del sector privado y público, el riesgo soberano se refiere al riesgo de impago de deudas, que se aplica a individuos, empresas y administraciones sólamente del sector público situadas en un cierto país. Para su cálculo, las calificadoras de riesgo se basan en factores como el historial de pagos, la estabilidad política, las condiciones económicas y la voluntad de repagar deudas.
+
+## Calificación
+
+La calificación del riesgo permite conocer las características y situación financiera del emisor, además de su potencial futuro, a fin de determinar la capacidad de pago del mismo. Las calificaciones (rating) son realizadas por empresas independientes, usando una metodología que se podría dividir en tres fases: 
+
+- Calificación preliminar: estiman la capacidad de pago del emisor mediante análisis financiero y comparativo.
+
+- Análisis de la calidad de las garantías (resguardo del bono, garantías del activo).
+
+- Calificación final del instrumento, que combina las dos fases previas.
+
+La calificación de un instrumento mide el riesgo de la emisión y no la del emisor.
+
+Las tres compañías de calificación comercial son Moody's Investors Service, Standard & Poor's Corporation y Fitch. Cada una de ella utiliza una nomenclatura diferente para la calificación de los instrumentos, sin embargo el concepto tras cada símbolo es bastante similar. En todos los sistemas el término de alto grado significa bajo riesgo de crédito, o viceversa, alta probabilidad de pagos futuros.
+
+Se dice que los bonos clasificados como triple A (AAA o Aaa) son de primera calidad; doble A (AA o Aa) son de alta calidad; los bonos A se denominan grado medio superior; y el triple B son de grado medio. Los bonos de menor calificación tienen elementos especulativos o son claramente especulativos.
+
+Las emisiones de bonos a las que se le asigna una calificación en las cuatro categorías superiores se denominan bonos de grado de inversión. Las emisiones que llevan una calificación por debajo de las cuatro categorías superiores se denominan bonos especulativos, o más popularmente conocidos como bonos de alto rendimiento o bonos basura.
+
+[https://www.moodys.com/](https://www.moodys.com/)
+[https://www.spratings.com/en_US/home](https://www.spratings.com/en_US/home)
+[https://www.fitchratings.com/site/home](https://www.fitchratings.com/site/home)
+
+# Valuación de los Bonos
+
+## Precio
+
+El bono tiene tres elementos esenciales que lo definen: el precio, el cupón y el nominal. En vista de que el desembolso de sus cupones y nominal ocurren en periodos futuros, el precio del mismo dependerá del valor actual de dichos flujos, es decir, el valor del dinero que se recibirá en el futuro comparado con el dinero que se tiene al momento. Este valor presente depende del rendimiento ofrecido en valores comparables en el mercado, en otras palabras, de las tasas vigentes en el mercado.
+
+Dicho esto, tenemos que:
+
+$$
+\text{valor del bono} = \text{valor presente de los cupones} + \text{valor presente del valor par}
+$$
+
+En el caso de bonos cero cupón tenemos que:
+
+$$
+\text{valor del bono} = \frac{Nominal}{(1+r)^t}
+$$
+
+El valor de los bonos que pagan cupones se puede expresar de la siguiente manera; dado una fecha de vencimienton "T" y una tasa de descuento "r":
+
+$$
+\text{valor del bono} = \displaystyle\sum_{t=1}^T \frac{Cupón}{(1+r)^t}+\frac{\text{valor par}}{(1+r)^T}
+$$
+
+El primer término de la ecuación representa el valor presente de una anualidad. Mientras que el segundo término representa el valor actual de un pago simple, que sería el pago final del valor del nominal.
+
+Otra forma de representar el valor de un bono, es utilizando el factor de actualización de una serie, es decir, una anualidad. Cuando hablamos de anualidades, nos referimos a la consecución de una renta o pago a lo largo del tiempo, de una forma periódica y donde los períodos y la renta son iguales. El valor presente de una anualidad se puede representar de la siguiente manera:
+
+$$
+\frac{1}{r}\left [ 1 - \frac{1}{(1+r)^T} \right ]
+$$
+
+Entonces, podemos reescribir la fórmula del precio de un bono como:
+
+$$
+\text{valor del bono} = Cupón\ * \left [ 1 - \frac{1}{(1+r)^T} \right ] + \text{valor par}\ *\ \frac{1}{(1+r)^T}
+$$
+
+En R podemos crear una función para el cálculo del valor de un bono, de la siguiente manera:
+
+```{r}
+# n=nominal, r=tasa cupón, ttm = tiempo al vencimiento, y=rendimiento
+precio <- function(n, r, ttm, y) {
+  r <- r/100
+  y <- y/100
+  cf<- c(rep(n * r, ttm - 1), n * (1 + r))
+  cf <- data.frame(cf)
+  cf$t <- as.numeric(rownames(cf))
+  cf$pv_factor <- 1 / (1 + y) ^ cf$t
+  cf$pv <- cf$pv_factor * cf$cf
+  sum(cf$pv)
+}
+
+# Precio de un bono con valor nominal de $1.000,
+# tasa cupón de 7%, vencimiento a 30 años,
+# y rendimiento de 6%
+precio(1000, 7, 30, 6)
+```
+
+## Interés
+
+Cuando hablamos del interés de instrumento financiero, nos referimos a la ganancia (plusvalía) generada por el hecho de invertir una cantidad de dinero en un dicho instrumento durante un periodo de tiempo determinado.
+
+Para su cálculo podemos utilizar dos metodologías distintas: el método del interés simple o el método del interes compuesto. La diferencia entre ambos métodos consiste en que en el primero todo el interés es pagado cuando la inversión madura. No hay oportunidad de reinvertir los pagos de intereses, en orden de ganar intereses sobre intereses. Mientras que en el segundo se tienen en cuenta las capitalizaciones de los intereses. La capitalización compuesta consiste en calcular los intereses generados sobre el capital que se va acumulando; es decir, sobre la cantidad inicialmente invertida y los intereses ya cobrados (devengados).
+
+### Interés simple
+
+
+Como bien mencionamos anteriormente, el interés simple es aquel que se calcula multiplicando el interés del periodo por el número de periodos que hay en un año. 
+
+$$
+\begin{array}{rl}
+\text{Interés simple} = capital\ *\ \text{interés del periodo}\ *\ n(años)\\
+\text{Interés simple} = capital\ *\ \text{interés del periodo}\ *\ \frac{n(meses)}{12}\\
+\text{Interés simple} = capital\ *\ \text{interés del periodo}\ *\ \frac{n(días)}{365}\\
+\end{array}
+$$
+
+El mayor inconveniente de dicha ecuación puede venir en el componente T, ya que hay al menos tres posibilidades de convención para el tiempo (base de cálculo) y dicha convención varía entre un instrumento y otro.
+
+### Base de cálculo
+
+Veamos algunas de las diferentes alternativas para expresar el tiempo:
+
+1) A/A (actual/actual): $\frac{\text{número de días del período de inversión}}{\text{número de días en el año}}$
+
+2) 30/360: $\frac{\text{número de días del período de inversión (se asumen meses de 30 dás)}}{\text{360}}$
+
+3) Actual/360: $\frac{\text{número de días del período de inversión}}{360}$
+
+Dado esto, veamos un ejemplo de como dependiendo de la base de cálculo que utilicemos, el resultado obtenido puede variar.
+
+Supongamos que un inversor invierte 1 millón de dólares por 9 meses al 10% en un instrumento que paga interés simple. Si la base de cálculo utilizada fuese Actual/Actual y si hubiesen 273 días en dicho periodo de 9 meses, el resultado obtenido fuese:
+
+$$
+\begin{array}{rl}
+I &= 1.000.000\ *\ 0,10\ *\ \frac{273}{365} \\
+I &= 74.794,52
+\end{array}
+$$
+
+Si la base utilizada fuese 30/360, el resultado obtenido fuese:
+
+$$
+\begin{array}{rl}
+I &= 1.000.000\ *\ 0,10\ *\ \frac{270}{360} \\
+I &= 75.000
+\end{array}
+$$
+
+Y por último, veamos que resultado se obtendría si la base utilizada fuese Actual/360
+
+$$
+\begin{array}{rl}
+I &= 1.000.000\ *\ 0,10\ *\ \frac{273}{360} \\
+I &= 75.833,33
+\end{array}
+$$
+
+Como pudimos observar, la base de conversión es un elemento clave a tener en cuenta para el cálculo de los intereses.
+
+En R podemos crear una función que nos permita calcular el interés simple de una inversión. Dicha función recibirá como parámetros `c` (capital), `t` (tasa de interés), `n` (tiempo) y debemos especificar la frecuencia con la que el interés se capitaliza, es decir, si el periodo de aplicación de la tasa es anual ("año"), mensual ("mes") o diario ("dia").
+
+```{r}
+interes_simple <- function(c,t,n,tt){
+  t <- t/100
+  if (tt == "anual"){
+    return(c * t * n)
+  }else if (tt == "mensual"){
+    return(c * t * (n/12))
+  }else if (tt == "diario"){
+    return(c * t * (n/365))
+  }
+}
+
+c <- 1000000
+t <- 10
+n <- 273
+interes_simple(c,t,n,"diario")
+```
+
+
+### Interés compuesto
+
+Es el resultado de tener en cuenta las capitalizaciones de los intereses (intereses sobre los intereses cobrados), que no considera el tipo de interés simple.
+
+La capitalización compuesta consiste en calcular los intereses generados sobre el capital que se va acumulando; es decir, sobre la cantidad inicialmente invertida y los intereses ya cobrados (devengados).
+
+$$
+\begin{array}{rl}
+C_{1}&=C_{0}+C_{0} * i= C_{0}(1+i)\\
+C_{2}&= C_{0}+C_{0}*i + (C_{0}+C_{0}*i)*i = C_{O}(1+i)^2\\
+C_{n} &= C_{i}(1+i)^n\\
+\end{array}
+$$
+
+$donde\ C_{n}\ =\ capital\ final\ y\ C_{i}\ =\ capital\ inicial$
+
+Al igual que con el interés simple, la tasa debe ser expresada en la temporalidad correcta.
+
+$$
+\begin{array}{rl}
+anual &= (1+ \frac{tasa\%}{100})^t\\
+mensual &= (1+ \frac{tasa\%}{100*12})^t*12\\
+semestral &= (1+ \frac{tasa\%}{100*2})^t*2\\
+trimestral &= (1+ \frac{tasa\%}{100*4})^t*4\\
+\end{array}
+$$
+
+
+El interés compuesto final vendrá determinado por la diferencia entre el capital final y el inicial.
+
+$$
+I = C_{f} - C_{i}
+$$
+
+Cuando tenemos pagos en multiples periodos la fórmula varia. Vamos a utilizar el mismo ejemplo anterior, con la diferencia de que los pagos se van a realizar durante 3 periodos. El primer periodo tiene 181 días, el segundo 184 y el tercero 181. Utilizando la base de cálculo Actual/Actual nos queda: 
+
+$$
+\begin{array}{rl}
+I &= 1.000.000\ *\ 0,10\ *\ \frac{181}{365} \\
+I &= 49.589,04
+\end{array}
+$$
+
+Para el sugundo periodo, el interés es calculado de la siguiente manera:
+
+$$
+\begin{array}{rl}
+\text{valor presente} & = 1.049.589,04 \\
+I &= 1.049.589,04\ *\ 0,10\ *\ \frac{184}{365} \\
+I &= 52.910,79
+\end{array}
+$$
+
+Por último, para el tercer periodo tenemos que:
+
+$$
+\begin{array}{rl}
+\text{valor presente} & = 1.102.499,83\\
+I &= 1.102.499,83\ *\ 0,10\ *\ \frac{181}{365} \\
+I &= 157.171,74
+\end{array}
+$$
+
+Ahora bien, si el instrumento utiliza una base de cálculo 30/360 y los términos de inversión se mantienen iguales durante todo el periodo de inversión, el valor presente, valor futuro y el interés pueden ser calculados bajo la siguiente fórmula general:
+
+$$
+\text{valor futuro} = \text{valor presente} (1+r)^n
+$$
+
+Con n= número de periodos y r = tasa de interés del periodo.
+
+Vamos a calcular el interés compuesto generado de una inversión de $1.200.000 durante 5 años a una tasa de interés anual del 8%.
+
+$$
+\begin{array}{rl}
+C_{5} &= 1.200.000(1+8\%)^5 = 1.763.194\\
+I &= 1.763.194 - 1.200.000 = 563.194
+\end{array}
+$$
+
+De igual forma que con el interés simple, vamos a crear una función en R que nos permita calcular el valor de los intereses compuestos, generados en una inversión durante un periodo de tiempo determinado.
+
+```{r}
+interes_compuesto <- function(c,t,n,tt){
+  
+  if (tt == "anual"){
+    cf <- c*(1+(t/100))^n
+  } else if (tt == "semestral"){
+    cf <- c*(1+(t/(100*2)))^(n*2)
+  } else if (tt == "trimestral"){
+    cf <- c*(1+(t/(100*4)))^(n*4)
+  } else if (tt == "mensual"){
+    cf <- c*(1+(t/(100*12)))^(n*12)
+  }
+  return(cf - c)
+}
+
+interes_compuesto(1200000,8,5,"anual")
+```
+
+
+### Evolución del precio y el interés acumulado (Accrued Interest)
+
+Si el Bono se cotiza a descuento el precio irá creciendo a medida que se devenga el interés correspondiente al cupón y el valor del bono tendrá en cuenta este hecho, incrementando gradualmente su precio hasta la fecha de cupón, fecha en la cual el cupón es entregado al inversor y el precio descuenta esa entrega disminuyendo, justamente, la cantidad correspondiente al cupón.
+
+![Accrued Interest](img/Accrued_interest.png)
+
+Los precios que observamos en los portales o periódicos financieros son de referencia, ya que estos no incluyen los intereses acumulados entre las fechas de pagos. 
+
+Si el bono se compra entre las fechas de pago de cupón del bono, el comprador debe pagar al vendedor los intereses acumulados. Esto no es más que el prorrateo del pago de cupón próximo a pagar. 
+
+![Cambio en el Valor de un bono a través de las fechas de cupones](img/Accrued_interest_2.png)
+
+Dado esto, tendremos que el precio del bono será igual al valor presente de sus flujos de caja más los intereses acumulados $Precio = VP + intereses\ acumulados$.
+
+La forma general de realizar su cálculo es: 
+
+$$
+Intereses\ acumulados = \frac{\text{Pago anual de cupón}}{\text{número de pagos al año}} *\ \frac{Días\ desde\ el\ último\ pago\ de\ cupón}{Días\ entre\ cupones}
+$$ 
+
+Es importante señalar que el número de días puede variar dependiendo de la base de convención que se utilice.
+
+Veamos un ejemplo: supongamos un bono que paga una tasa cupón de 8% y tiene un nominal de $1.000. Desde la última fecha de pago de cupón han transcurrido 30 días y entre los pagos de los cupones hay un total 182 días.
+
+$$
+Intereses\ acumulados = \frac{80}{2} *\ \frac{30}{182} = 6,59
+$$
+
+Esto quiere decir que si el precio de mercado del bono es de $\$990$, a este valor habrá que sumarle $\$6,59$ para obterer el precio que realmente se debe pagar si se desea comprar dicho instrumento.
+
+En R podemos generar una función que nos calcule los intereses acumulados de un bono. Sin embargo primero procederemos a crear una función que calcule la fecha del último cupón, ya que la necesitaremos para calcular los intereses acumulados. Los argumentos de la función serán: la fecha de negociación `negociacion` y la fecha de vencimiento `vencimiento`.
+
+```{r}
+ultimo_cupon <- function(negociacion, vencimiento){
+  vencimiento <- as.Date(vencimiento, format = "%d/%m/%Y")
+  negociacion <- as.Date(negociacion, format = "%d/%m/%Y")
+  a <- month(vencimiento)
+  
+  if (day(vencimiento) > 30){
+    d <- 30
+  }else {
+    d <- day(vencimiento)
+  }
+  
+  if (a > 6){
+    c2 <- month(vencimiento) - 6
+    c1 <- a 
+  }else {
+    c1 <- month(vencimiento) + 6
+    c2 <- a
+  }
+    
+  if (month(negociacion) > c2 && month(negociacion) < c1){
+    m <- c2
+    y <- year(negociacion)
+    
+    return(as.Date(ISOdate(y,m,d)))
+  
+  }
+  
+  if(month(negociacion) < c2){
+    m <- c1
+    y <- year(negociacion)-1
+    
+    return(as.Date(ISOdate(y,m,d)))
+  }
+  
+  if(month(negociacion)> c1){
+    m <- c1
+    y <- year(negociacion)
+    
+    return(as.Date(ISOdate(y,m,d)))
+  }  
+  
+  if(month(negociacion) == c1){
+    if (d < day(vencimiento)){
+      m <- c2
+      y <- year(negociacion)
+      
+      return(as.Date(ISOdate(y,m,d)))
+    }else {
+      m <- c1
+      y <- year(negociacion)
+      
+      return(as.Date(ISOdate(y,m,d)))
+    }
+  }
+  
+  if(month(negociacion) == c2){
+    if (day(negociacion) < day(vencimiento)){
+      m <- c1
+      y <- year(negociacion)-1
+      
+      return(as.Date(ISOdate(y,m,d)))
+    }else {
+      m <- c2
+      y <- year(negociacion)
+      
+      return(as.Date(ISOdate(y,m,d)))
+    }
+  }
+}
+
+ultimo_cupon("25/09/2017","16/05/2024")
+```
+
+Una vez creada la función que nos permite calcular la última fecha de pago cupón del bono, ahora procederemos a crear la función que nos calcule los intereses acumulados. Esta función recibirá como parámetros la tasa cupón `cupon`, la fecha de negociación `settle` y la última fecha de pago de cupones del bono `last_coupon`.
+
+```{r}
+accrued_interest <- function(coupon, settle, last_coupon){
+  coupon <- coupon /100
+  settle <- as.Date(settle, format = "%d/%m/%Y")
+  last_coupon <- as.Date(last_coupon, format = "%d/%m/%Y")
+  yf <- year(settle)
+  yi <- year(last_coupon)
+  mf <- month(settle)
+  mi <- month(last_coupon)
+  df <- day(settle)
+  di <- day(last_coupon)
+  total_days <- ((yf - yi)*360) + ((mf - mi)*30) + (df - di)
+  accrued <- coupon * (total_days)/360
+  return(accrued * 100)
+}
+
+accrued_interest(6, "25/09/2017", "16/05/2017")
+```
+
+Recuerde que el resultado generado por esta función es porcentual. De manera que si queremos saber el valor de estos en términos monetarios, debemos multiplicarlo por el valor nominal del bono.
+
+## Valor futuro
+
+El valor futuro nos permite calcular de que manera se verá modificado el valor de una cantidad de dinero que se posee actualmente en el futuro, aplicando una tasa de interés específica durante un periodo de tiempo determinado. El valor futuro describe el proceso de crecimiento de dicha inversión.
+
+Dicho de otra manera, el valor futuro hace referencia al capital acumulado en un momento futuro, generado por los intereses y/o amortizaciones que se den a lo largo de la vida de una inversión. Este concepto nos permite evaluar y comparar posibles alternativas de inversión.
+
+Si el tipo de interés es simple, el valor futuro puede ser calculado bajo la siguiente fórmula general:
+
+$$
+\text{valor futuro} = \text{valor presente} (1 +\ r *\ n )
+$$
+
+Con n= número de periodos y r = tasa de interés del periodo.
+
+Por otra parte, si el tipo de interés aplicado es compuesto, el valor futuro lo podremos calcular bajo la fórmula a continuación:
+
+$$
+\text{valor futuro} = \text{valor presente} (1+r)^n
+$$
+
+Vamos a crear una función en R para calcular el valor futuro. Dicha función recibirá como parámetros el valor presente `vp`, la tasa de interés `r`, el tiempo de inversión `n`, el tipo de capitalización del interés `tc` (en el caso de interés simple: anual, mensual y diario; en el caso de interés compuesto: mensual, anual, trimestral y semestral) y el tipo de interés a aplicar `ti` (simple o compuesto).
+
+```{r}
+valor_futuro <- function(vp, r, n, tc, ti){
+  r <- r/100
+  
+  if (tc == "anual" && ti == "simple"){
+    return(vp * (1 + r * n))
+  }else if (tc == "mensual" && ti == "simple"){
+    return(vp * (1 + r * (n/12)))
+  }else if (tc == "diario" && ti == "simple"){
+    return(vp * (1 + r * (n/365)))
+  }else if (tc == "anual" && ti == "compuesto"){
+    return(vp*(1+r)^n)
+  }else if (tc == "semestral" && ti == "compuesto"){
+    return(vp*(1+(r/2))^(n*2))
+  } else if (tc == "trimestral" && ti == "compuesto"){
+    return(vp*(1+(r/4))^(n*4))
+  } else if (tc == "mensual" && ti == "compuesto"){
+    return(vp*(1+(r/12))^(n*12))
+  }
+}
+```
+
+
+## Valor Presente
+
+Del mismo modo, es posible calcular el valor presente de una inversión a partir de su valor futuro. El valor futuro nos indica el monto que se tendría que invertir para obtener el flujo en el período de tiempo que se estima y por la tasa de interés a la cual se está descontando.
+
+Si el tipo de interés es simple, el valor presente puede ser calculado bajo la siguiente fórmula:
+
+$$
+\text{valor presente} = \frac{\text{valor futuro}}{(1 +\ (r *\ n))}
+$$
+
+Con n= número de periodos y r = tasa de interés del periodo.
+
+Por otra parte, si el tipo de interés aplicado es compuesto, el valor presente será: 
+
+$$
+\text{valor presente} = \frac{\text{valor futuro}}{(1+r)^n}
+$$
+
+Al igual que con el valor futuro, vamos a crear una función en R para calcular el valor presente. Dicha función recibirá los siguientes parámetros el valor futuro `vf`, la tasa de interés `r`, el tiempo de inversión `n`, el tipo de capitalización del interés `tc` (en el caso de interés simple: anual, mensual y diario; en el caso de interés compuesto: mensual, anual, trimestral y semestral) y el tipo de interés a aplicar `ti` (simple o compuesto).
+
+```{r}
+valor_presente <- function(vf, r, n, tc, ti){
+  r <- r/100
+  
+  if (tc == "anual" && ti == "simple"){
+    return(vf / (1 + (r * n)))
+  }else if (tc == "mensual" && ti == "simple"){
+    return(vf / (1 + (r * (n/12))))
+  }else if (tc == "diario" && ti == "simple"){
+    return(vf / (1 + (r * (n/365))))
+  }else if (tc == "anual" && ti == "compuesto"){
+    return(vf/(1+r)^n)
+  }else if (tc == "semestral" && ti == "compuesto"){
+    return(vf/(1+(r/2))^(n*2))
+  } else if (tc == "bimestral" && ti == "compuesto"){
+    return(vf/(1+(r/6))^(n*6))
+  }else if (tc == "trimestral" && ti == "compuesto"){
+    return(vf/(1+(r/4))^(n*4))
+  } else if (tc == "mensual" && ti == "compuesto"){
+    return(vf/(1+(r/12))^(n*12))
+  }
+}
+
+```
+
+
+## Valor Presente Neto
+
+Es el valor de una inversión en el momento en el que se está valorando. Esta fórmula permite obtener el valor presente de una serie de flujos de caja que se recibirán en el futuro, producto de una inversión. Para su cálculo se resta el monto inicialmente invertido al valor presente de los flujos que se recibirán en el futuro. Permite hacer comparaciones claras de una inversión con los flujos que produce.
+
+$$
+\begin{array}{rl}
+VPN = - I_{0} + VP\\
+VPN = - I_{0} + \displaystyle\sum_{i=1}^N \frac{FC_{i}}{(1+r)^i}
+\end{array}
+$$
+
+Todo proyecto con un $VPN\ >\ 0$ agrega riqueza a los accionistas. Si por el contrario el $VPN\ <\ 0$, generará pérdidas a los accionistas.
+
+$$
+\begin{array}{rl}
+\text{Si VPN > 0 }
+\end{array}
+$$
+
+El siguiente código en R, muestra la función que nos permite calcular el valor presente neto de una inversión. La función recibirá como parámetros el monto de la inversión inicial `I`, el valor del o los flujos (si son flujos distintos se deberá ingresar un vector con los valores de los distintos flujos, y en caso contrario únicamente se deberá ingresar el valor del flujo) `flujos`, la tasa de interés `r`, el número de periodos `n` y el tipo de flujos `tipo_flujos` (si son iguales = "iguales" y en caso de ser distintos = "distintos").
+
+```{r}
+VPN <- function(I, flujos, r, n, tipo_flujos){
+  r <- r/100
+  descuento <- c()
+  
+  if (tipo_flujos == "iguales"){
+    FC <- rep(flujos, n)
+  }else if (tipo_flujos == "distintos"){
+    FC <- flujos
+  }
+  
+  for(i in 1:n){
+      descuento <- c(descuento, 1 / (1 + r) ^ i)
+  }
+  vp <- FC * descuento
+  return(round(-I + sum(vp),digits = 2))
+}
+VPN(100, c(10,15,30,35,40), 15, 5, "distintos")
+```
+
+
+## Tasa Efectiva Anual
+
+Como bien ya se describió anteriormente la tasa de interés es la plusvalía o retribución que se obtiene producto de la utilización de un cierto capital. Otra forma de ver dicha tasa de interés es como el costo de oportunidad de una inversión o el nivel mínimo de rendimiento exigido para llevar a cabo un determinado proyecto.
+
+A pesar de que las funciones creadas, en R, anteriormente de valor futuro y valor presente toman en cuenta la capitalización de los intereses, vamos a detallar el proceso de calcular la tasa de interés efectiva. Recordemos que la capitalización es el proceso mediante el cual los intereses devengados se agregan al capital. Cuando hablamos de capitalización anual, hablamos de que los intereses generados se agregan al capital al final de cada año. Cuando hablamos de capitalización semestral, decimos que los intereses generados se agregan al capital al final de cada semestre, y así sucesivamente.
+
+Para calcular la tasa de interés efectiva, cuando el interés se capitaliza más de una vez al año, nos valemos de la siguiente ecuación:
+
+$$
+Tasa\ efectiva = \left ( 1 + \frac{r}{m} \right )^m - 1
+$$
+
+donde _r_ es la tasa de interés nominal anual y _m_ es el número de veces que se capitalizan los intereses.
+
+Veamos como queda nuestra función en R para el cálculo de la TAE.
+
+```{r}
+TEA <- function(r, tc){
+  r <- r/100
+  
+  if (tc == "semestral"){
+    return((1+r/2)^2 - 1)
+  }else if (tc == "trimestral"){
+    return((1+r/4)^4 - 1)
+  }else if (tc == "mensual"){
+    return((1+r/12)^12 - 1)
+  }else if (tc == "diaria"){
+    return((1+r/365)^365 - 1)
+  }
+}
+```
+
+La utilidad de esta tasa se debe a que en muchas ocasiones conocemos la tasa de interés anual efectiva del proyecto, pero sus flujos pueden ser mensuales, diarios, semestrales o trimestrales. Por lo que debemos buscar una tasa efectiva mensual que sea equivalente a la TEA, para poder calcular el valor presente y el valor presente neto.
+
+## Rendimiento
+
+Los bonos tienen numerosas medidas de rendimiento. Un inversionista que compra un bono puede esperar recibir un retorno de los pagos de intereses de cupón efectuados por el emisor, cualquier ganancia (o pérdida) de capital al vencimiento del bono o al momento de la venta, y del ingreso producto de las reinversiones de los intereses recibidos por cupones. Vamos a estudiar las medidas más utilizadas para medir el potencial retorno de una inversión en bonos. Estas medidas de rendimiento se expresan como un rendimiento porcentual y no como un retorno en dólares.
+
+### Tasa cupón
+
+La tasa cupón de un bono es el monto que se recibe por concepto de intereses en un año.
+
+$$\text{tasa cupón}\ = \frac{cupón}{\text{valor nominal}}$$
+
+### Rendimiento corriente (Current Yield-"CY")
+
+Es el flujo de dinero en intereses que recibe un inversionista sobre el capital invertido. Es una aproximación a la rentabilidad de los bonos que tienen cupones, porque a diferencia del rendimiento a vencimiento es una medida fácil de calcular. Sin embargo, el rendimiento corriente de un bono mide solamente los ingresos en efectivo proporcionados por el bono como un porcentaje del precio del bono e ignora cualquier posible ganancia o pérdida de capital. 
+
+Este tipo de medida se puede utilizar cuando se requiere un indicador de corto plazo, que permita tomar decisiones para un inversionista que sólo quiere un instrumento de corto plazo, como proveedor de flujos de interés.
+
+$$
+\text{Rendimiento corriente (CY)}\ = \frac{Cupón}{Precio}
+$$
+
+Suponga que un bono paga $6\%$ de interés por año, con un valor nominal de $\$1.000$ y tiene un precio de mercado de $\$735$. Su rendimiento corriente será igual:
+
+$$
+\begin{array}{rl}
+cupón &= 1.000 * 6\% = 60\\
+\text{rendimiento corriente}\ &= \frac{60}{735}\ = 0,0816\\
+\text{rendimiento corriente}\ &= 8,16\%
+\end{array}
+$$
+
+En R podemos generar una función para realizar dicho cálculo, de la siguiente manera:
+
+```{r}
+current_yield <- function(cupon, precio, nominal){
+  c <- cupon/100
+  
+  percent((c*nominal)/precio)
+}
+
+current_yield(6, 735,1000)
+```
+
+
+### Rendimiento al vencimiento (Yield-to-Maturity)
+
+Es la tasa interna de rendimiento de los flujos de efectivo de un bono, incluyendo cualquier acreción o amortización a la par. El rendimiento o tasa interna de rendimiento de cualquier inversión es el tipo de interés que hará que el valor presente de los flujos de efectivo sea igual al precio (o inversión inicial). 
+
+Esta tasa se ve a menudo como una medida de la tasa media de rendimiento que se ganará en un bono si se compra ahora y se mantiene hasta el vencimiento. Para calcular el rendimiento hasta el vencimiento, debemos resolver la ecuación del precio del bono para la tasa de interés dada el precio del bono:
+
+$$
+\text{Precio} = \displaystyle\sum_{t=1}^n \frac{Cupón}{(1+YTM)^t}+\frac{\text{nominal}}{(1+YTM)^n}
+$$
+
+El cálculo de un rendimiento implica un procedimiento de prueba y error, ya que no hay una fórmula directa que nos permita hallar su valor. Este método consiste en ir tanteando con diferentes YTM hasta que consigamos una que haga que el precio del bono coincida.
+
+Para entender como funciona este procedimiento, supongamos un inversor que comprando un bono y manteniéndolo hasta el vencimiento obtendría $\$70$ al año por concepto de intereses. Dicho bono se cotiza en el mercado a un precio de $\$910$ sobre un nominal de $\$1.000$ y tiene un vencimiento de 5 años. Vamos a calcular el YTM de este bono.
+
+$$
+910 = \frac{70}{(1+YTM)^1}+\frac{70}{(1+YTM)^2}+\frac{70}{(1+YTM)^3}+\frac{70}{(1+YTM)^4}+\frac{1.070}{(1+YTM)^5}
+$$
+
+Supongamos un YTM = 12%
+
+$$
+\begin{array}{rl}
+910 &= \frac{70}{(1+0,12)^1}+\frac{70}{(1+0,12)^2}+\frac{70}{(1+0,12)^3}+\frac{70}{(1+0,12)^4}+\frac{1.070}{(1+0,12)^5}\\
+910 &> 819,76\\
+\end{array}
+$$
+
+Asumamos ahora un YTM = 8%
+
+$$
+\begin{array}{rl}
+910 &= \frac{70}{(1+0,08)^1}+\frac{70}{(1+0,08)^2}+\frac{70}{(1+0,08)^3}+\frac{70}{(1+0,08)^4}+\frac{1.070}{(1+0,08)^5}\\
+910&<960,07\\
+\end{array}
+$$
+
+El valor del YTM debe estar entre 12% y 8%
+
+$$
+\begin{array}{rl}
+\text{910} &= \frac{70}{(1+0,0933)^1}+\frac{70}{(1+0,0933)^2}+\frac{70}{(1+0,0933)^3}+\frac{70}{(1+0,0933)^4}+\frac{1.070}{(1+0,0933)^5}\\
+910 &\approx 910,07\\
+\end{array}
+$$
+
+Por lo que el valor del YTM = 9,33%.
+
+En R, podemos construir una función `ytm` que nos permita obtener su valor de manera directa. Esta función tendrá como parámetros de entrada un vector con el precio del bono en negativo, por ser un desembolso, en la primera posición y las siguientes posiciones corresponden a los flujos de caja que tendrá el bono durante su vida. Esta función internamente calculará las raíces de una función dada, para lo que utilizaremos el comando `uniroot()` a la cual se le introduce una función original, el intervalo donde se quieren buscar dichas raíces y los parámetros que use la función original. 
+
+Ahora bien, para obtener dicho vector, podemos utilizar otra función que lo genere. Llamaremos a dicha función, `flujos_de_caja`. Esta segunda fución recibirá como parámetros el precio de mercado del bono `p`, el valor nominal del bono `n`, la tasa cupón `r` y el vencimiento `ttm`. 
+
+```{r}
+flujos_de_caja <- function(p,n,r,ttm){
+  r <- r/100
+  cf <- c(-p, rep(n*r, ttm-1), n*(1+r))
+  cf
+}
+
+# Definimos las variables
+
+p <- 1000
+n <- 1000
+r <- 7
+ttm <- 5
+
+# Una vez creada la función, calculamos los flujos y los alojamos en
+# un objeto que llamaremos cf.
+
+cf <- flujos_de_caja(p,n,r,ttm)
+
+
+# Creamos la función `bval` que utiliza la misma lógica de la función precio() 
+# para obtener el total del valor presente de los flujos de caja.
+
+bval <- function(i, cf, t=seq(along = cf)) {
+ sum(cf / (1 + i)^t)
+}
+
+
+# Por último, creamos la función YTM() que utiliza la función uniroot()
+# para hallar la raíz de la función bval() y encontrar el valor en el cual
+# se hace cero; que no es más que hallar el YTM que iguala el precio del
+# bono al valor presente de los flujos de caja.
+
+YTM <- function(cf){
+  yield <-uniroot(bval, c(0, 1), cf = cf)$root
+  yield
+}
+
+YTM(cf)
+```
+
+El rendimiento del bono al vencimiento es la tasa interna de rendimiento de una inversión en el bono. Este puede ser interpretado como la tasa de rendimiento compuesta durante la vida del bono bajo el supuesto de que todos los cupones de bonos pueden reinvertirse a ese rendimiento.
+
+
+### Relación entre la tasa cupón, el rendimiento corriente y el rendimiento al vencimiento
+
+La tasa de interés o tasa de descuento que un inversor espera obtener de un bono es conocida como rendimiento requerido (required yield) sobre dicha inversión, y está relacionado con el retorno que el inversor podría obtener invirtiendo su dinero en otro bono con las mismas características (calidad crediticia del emisor, valor del cupón y vencimiento). En la práctiva el rendimiento requerido no es más que la tasa de interés de mercado para un determinado plazo y nivel de riesgo.
+
+Existe una relación inversa entre las tasas de interés de mercado y el precio de los bonos. Si la tasa de interés del mercado es igual a la tasa de cupón del bono, entonces el bono se vende a su valor par o **a la par**. Si la tasa de interés del mercado es superior a la tasa de cupón del bono, entonces su precio es menor que su valor facial y es vendido con **descuento**. Por último, si la tasa de interés del mercado es menor que la tasa de interés ofrecida por el bono, entonces este es vendido con **prima**, ya que el precio estará por encima de su valor nominal.
+
+| Bono vendido a |        Relación       |
+|:--------------:|:---------------------:|
+|       Par      | Tasa cupón = CY = YTM |
+|    Descuento   | Tasa cupón < CY < YTM |
+|      Prima     | Tasa cupón > CY > YTM |
+
+
+## Curva de Rendimientos
+
+La estructura temporal de las tasas de interés, o curva de rendimientos, es la relación gráfica entre el tiempo que resta hasta el vencimiento y el rendimiento de los bonos que sean similares en todos los aspectos, excepto que difieren en el vencimiento. Las curvas de rendimiento ayudan al gestor de carteras a predecir la dirección de los tipos de interés, y por consiguiente, a diseñar estrategias de inversión adecuadas en función a sus propósitos.
+
+Se construyen en base a los precios con que se negocian los títulos en un momento dado, a partir de los cuales se calculan los rendimientos correspondientes a títulos específicos para los diferentes plazos de vencimiento. 
+
+Dicha relación puede adoptar distintas formas, sin embargo las más comunes son la normal o la invertida. La primera indicaría que a mayor plazo hasta el vencimiento mayor es el rendimiento del bono; mientras que la segunda, por el contrario, indica que a medida que aumenta el plazo hasta el vencimiento el rendimiento disminuye.
+
+```{r}
+Yield <- c(0.0105, 0.0116, 0.0128, 0.0136, 0.0178, 0.0219, 0.0277)
+Maturity <- c(0.3, 0.6, 1, 2, 5, 10, 30)
+plot(Maturity, Yield, type = "o", yaxt ="n", col = "green", main = "Bonos del Tesoro Americano", xlab = "Vencimiento",      ylab = "Rendimiento", sub = "Fuente: www.bloomberg.com", pch = 18, col.sub = "red")
+axis(2, at=Yield, lab=percent(Yield))
+```
+
+El gráfico a continuación muestra la curva de rendimientos de los bonos soberanos de Venezuela. Este tipo de curva se denomina invertida, porque los rendimientos de los instrumentos de corto plazo son mayores que los rendimientos de los instrumentos de largo plazo, lo que presagia bajadas de tipos de interés.
+
+Para su construcción utilizaremos la función de `ytm` creada anteriormente para determinar los rendimientos de los bonos a partir de la información de sus precios actuales de mercado.
+
+```{r}
+precios <- c(747.550, 660.000, 463.750, 391.030, 467.530, 354.580, 347.170, 340.700, 387.350, 395.770, 346.700, 403.780, 362.530, 330.850)
+
+vencimientos <- c(1,1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 14, 16, 21)
+
+cupones <- c(13.625, 7, 7.75, 6, 12.75, 9, 8.25, 7.65, 11.75, 9.25, 9.25, 11.95, 9.375, 7)
+
+rendimientos <- c()
+
+for(i in 1: length(precios)){
+  cf <- flujos_de_caja(precios[i], n = 1000, r = cupones[i], ttm = vencimientos[i])
+  rendimientos <- c(rendimientos, YTM(cf)*100)
+}
+
+datos <- data.frame(rendimientos, vencimientos)
+
+f<- ggplot(datos, aes(x = vencimientos, y = rendimientos, colour = vencimientos)) +
+    geom_point() + geom_smooth(method = "lm", se = FALSE, formula = y ~ x +I(x^2), size = 0.8) +
+  stat_poly_eq(formula = y ~ x + I(x^2), 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE, size=3, label.x.npc = "right", label.y.npc = "top")+
+  scale_x_discrete(limits=vencimientos)+
+  labs(title = "Curva de Rendimiento",
+       subtitle = "25-09-2017",x="Tiempo de vencimiento", y="Rendimiento",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+
+```
+
+
+Bonos por encima de la curva de rendimiento, ofrecen un rendimiento mayor al exigido por el mercado; por ende, poseen un precio menor al esperado del instrumento. Supone una oportunidad de compra, en vista de que hay expectativas de una disminución del rendimiento, y por consecuencia un incremento del precio.
+
+Por el contrario, bonos por debajo de la curva de rendimiento, presentan una oportunidad de venta ya que poseen un rendimiento menor al esperado del instrumento, por ende su precio es mayor. En vista de que hay expectativas de un incremento en el rendimiento, para buscar igualar al rendimiento esperado por el instrumento, esto ocasionará una disminución en el precio del mismo.
+
+La pendiente que presenta la curva de rendimiento es muy utilizada para predecir la actividad económica futura; en el caso de que exista una diferencia positiva grandre entre los rendimientos de largo plazo y corto indicará un incremento económico favorable. Cuando el caso es que la curva es de la forma invertida generalmente se debe a una distorsión económica en algún punto individual, que luego el propio mercado hará que con el tiempo se vuelva de forma normal.
+
+### Tasas Spot y Curva de Tipos Spot
+
+De manera general, cualquier bono puede ser visto como un paquete de bonos cero cupón, donde cada uno de ellos tiene un vencimiento igual a su fecha de pago de cupón o, en el caso del nominal, la fecha de vencimiento. En ese entonces, el valor del bono vendría a ser igual al valor de todos los instrumentos cero cupón que lo componen. 
+
+Para determinar el valor de cada bono cero cupón, es necesario conocer el rendimiento de un instrumento del Tesoro cero cupón con ese mismo vencimiento. Dicho rendimiento es conocido como tasa spot y la representación gráfica de la relación entre la tasa spot y su vencimiento se denomina curva de tipo spot. Las tasas de rentabilidad cupón cero son tasas exactas que no están sujetas al riesgo de reinversión; al no tener flujos durante su vida que reinvertir. Las tasas spot a un determinado vencimiento es el rendimiento anual de una inversión que no tiene pagos durante su vida.
+
+El rendimiento en este caso se despejaría de la siguiente fórmula:
+
+$$P = \frac{N}{(1+r)^n}\Rightarrow r=\left( \frac{N}{P} \right)^{1/n}-1$$
+
+Las tasas Spot se calculan utilizando bonos cupón cero que tengan el mismo tiempo de vencimiento.
+
+Para calcular esta tasa en R crearemos una función llamada `tasa_Spot()`, que tendrá como parámetros de entrada: `N` el valor del nominal, `P` el precio actual de bono en el mercado y `n` el tiempo de vencimiento; internamente calculará la tasa de rendimiento y retornará dicho valor calculado.
+
+```{r}
+tasa_Spot <- function(N, P, n){
+  
+  ts <- (N/P)^(1/n)-1
+  return(percent(ts))
+
+}
+
+tasa_Spot(1000,934.58,1)
+
+```
+
+En vista de que no existen emisiones de deuda del Tesoro de cupón cero vencimientos superiores a un año, no es posible construir tal curva únicamente a partir de las observaciones de los rendimientos del Tesoro. En ese caso es necesario aplicar la técnica de _boostraping_ con bonos normales que sí tengan cupón, para estimar las tasas spot restantes.
+
+El boostraping consiste en ir calculando las tasas spot restantes a partir de las que están disponibles, ya que los flujos del instrumento no se van a descontar al YTM, como normalmente se hace, sino ahora cada flujo va a ser descontado a la tasa spot correspondiente.
+
+Veamos un ejemplo, para entender como trabaja la técnica del boostraping. Supongamos que, para calcular las tasas $r_{0,1}$ y $r_{0,2}$, hay disponibles tres instrumentos con las características siguientes:
+
+- Una letra del Tesoro con un valor nominal de $1.000 y vencimiento a un año.
+
+- El bono B, otro bono cupón cero con igual valor nominal de $1.000, pero con dos años de vencimiento.
+
+- El bono C, con tiempo de vencimiento de 3 años, con una tasa cupón de 5% y un valor nominal de 1000\$
+
+Además supongamos que los precios de dichos bonos en este momento son:
+
+- Precio del bono A: $P_a=934.58\$$
+
+- Precio del bono B: $P_b=857.34\$$
+
+- Precio del bono C: $P_c=946.93\$$
+
+La tasa spot del primer año vendrá determinada por el rendimiento de la letra del Tesoro a un año.
+
+$$r_1=\left( \frac{N_a}{P_a} \right)^{1/n}-1= \left( \frac{1000}{934.58} \right)^{1/1}-1=0.06999936\approx 0.07$$
+
+Si utilizamos la función anteriormente creada tendremos que:
+
+```{r}
+tasa_Spot(1000,934.58,1)
+```
+
+Para calcular la tasa spot del segundo año, podríamos tomar la tasa ofrecida por el bono B, que también es un bono cero cupón:
+
+$$r_2=\left( \frac{N_b}{P_b} \right)^{1/n}-1= \left( \frac{1000}{857.34} \right)^{1/2}-1=0.07999926\approx 0.08$$
+
+Utilizando nuevamente la función en R:
+
+```{r}
+tasa_Spot(1000,857.34,2)
+```
+
+Ahora bien, ¿qué ocurre si no se contara con el bono B (cero cupón), sino que sólo se contara con el bono C?. Es aquí donde entra en juego la técnica del boostraping. 
+
+Utilizando la tasa Spot a un año calculada anteriormente y el rendimiento ofrecido por el bono C, procederemos a calcular la tasa spot del segundo año.
+
+$$
+\begin{array}{rl}
+P_c & = \displaystyle \frac{C_1}{(1+r_1)^1} + \frac{C_2}{(1+r_2)^2}\\
+946.93 & = \displaystyle \frac{50}{(1+0.07)^1} + \frac{1050}{(1+r_2)^2}
+\end{array}
+$$
+Despejando
+
+$$
+\begin{array}{rl}
+r_2 & = \displaystyle \left(\frac{1050}{946.93-\frac{50}{1+0.07}}\right)^{1/2}-1\\
+& = 0.08000284\\
+r_2 & \approx 0.08
+\end{array}
+$$
+
+Para realizar este cálculo en R crearemos una función que llamaremos `tasa_Spot_cupon()`, la cual tendrá como parámetros de entrada: `N` el nominal del bono, `P` precio del bono en el mercado ,`C` cupón que paga el bono en dolares, `r` vector con los rendimientos anteriores, `n` tiempo de vencimiento, que se refiere al tiempo al que se quiere calcular la tasa Spot.
+
+```{r}
+tasa_Spot_cupon <- function(N, P ,C, r , n){
+  
+  rend <- c()
+  for(i in 1:n-1){
+    rend[i] <- C / ( (1+r[i])^i )
+  }
+  
+  d <- P - sum(rend) 
+  
+  ts <- ( (N+C) / d )^(1/n) - 1
+  
+  return(percent(ts))
+
+}
+
+tasa_Spot_cupon(N=1000,P=946.93,C=50,r=c(0.07),n=2)
+```
+
+### Tasas Forward y Curva de tipos Forward
+
+Los tipos de interés forward son tipos spot pactados para un determinado plazo (normalmente
+a un año) que se van a dar en el futuro, dentro de un determinado período de tiempo. Las tasas forward dicen el interés que se pagará por cierta cantidad de dolares en el futuro
+
+Los tipos forward se obtiene a través de las tasas cupón cero que en el momento presente se conocen con certeza.
+
+El uso de las tasas de interés forward permite separar las expectativas de los inversionistas de corto, mediano y, aún más importante, de largo plazo, cuya interpretación es de gran utilidad para los hacedores de política.
+
+En vista de que no es posible saber con certeza qué tipos de interés van a haber dentro de dos años, un inversor puede tratar de predecir cuál es la tasa a un año que va a darse dentro de dos años. A esa tasa se la llama forward porque es una tasa futura. 
+
+Veamos a continuación como predecir esta tasa en un período de dos años. Supongamos que un inversión tiene como objetivo invertir en un período de dos años, como este tipo de inversión es en base a bonos cupón cero se tendrían las dos opciones siguientes:
+
+- Invertir en un bono cupón cero con vencimiento a dos años. La rentabilidad de este bono la llamaremos $r_1$.
+  
+- Invertir en un bono cupón cero con vida de un año y luego del vencimiento de éste invertir en otro bono cupón cero con vencimiento de un año, cumpliendo así la inversión a dos años, donde se conocería la tasa de rendimiento del primer bono, llamemosla $r_2$, pero no conocemos la tasa de rendimiento del segundo año, a esta tasa de le llama tasa forward, y la denotaremos por $f_{1,2}$, la tasa de interés futura del año 1 al año 2.
+  
+De la fórmula de valor futuro $VF=VP\times (1+r)^n$, tenemos que sí se invierte una cantidad $VP$ de dolares con una tasa de rendimiento $r$ en un tiempo $n$ se recibirá $VF$ al final de la inversión. La tasa forward se calculará en base a invertir un dolar, es decir queremos saber el valor equivalente de un dolar de un año a partir de ahora. Suponiendo que estamos en un mercado eficiente invertir en ambas opciones es similar, por lo tanto
+
+$$(1+r_1)^2=(1+r_2)(1+f_{1,2})$$
+
+Despejando tenemos que la tasa forward nos queda
+
+$$f_{1,2} = \frac{(1+r_1)^2}{(1+r_2)}-1$$
+
+La generalización de esta fórmula es 
+
+$$f_{n,n+1} = \frac{(1+r_{n+1})^{n+1}}{(1+r_n)^n}-1$$
+
+Para realizar este cálculo en R crearemos una función llamada `tasa_Forward()`, la cual tendrá como parámetros de entrada: `rn` tasa de rendimiento al tiempo $n$, `rn_1` tasa de rendimiento al tiempo $n+1$, `n` tiempo.
+
+```{r}
+tasa_Forward <- function(rn,rn_1,n){
+  
+  tf <- ((1+rn_1)^(n+1))/((1+rn)^n)-1
+  
+  return(percent(tf))
+}
+```
+
+Para ver la aplición de esta función supongamos que tenemos los tipos de intereses correspondientes a tres años, 3%, 4% y 5%, respectivamente. ¿Cuál sería la tasa de interés para el período del segundo año al tercer año?
+
+```{r}
+tasa_Forward(rn=0.04,rn_1=0.05,n=2)
+```
+
+### Teorías de la curva de rendimientos
+
+Dos teorías principales han evolucionado para explicar estas formas posibles de la curva de rendimiento: la teoría de las expectativas y la teoría de la segmentación del mercado. De la teoría de las expectativas, se derivan 3 teorías adicionales: la teoría de las expectativas puras, la teoría de la liquidez y la teoría del hábitat preferido.
+
+Estas tres teorías comparten una hipótesis sobre el comportamiento de las tasas forward a corto plazo y asumen también que las tasas a plazo de los bonos a largo plazo actuales están estrechamente relacionadas con las expectativas del mercado sobre las tasas futuras a corto plazo.
+
+Sin embargo, a pesar de compartir una misma hipótesis, difieren sobre si otros factores también afectan a las tasas a plazo (forward) y cómo. La teoría de las expectativas puras postula que ningún factor sistemático distinto de las tasas futuras de corto plazo esperadas afecta a los tipos a plazo (forward); la teoría de la liquidez y la teoría del hábitat preferido afirman que hay otros factores.
+
+En términos generales, la teoría de las expectativas supone que, en conjunto, los prestamistas y los prestatarios son indiferentes entre bonos a largo plazo y a corto plazo, excepto si existen diferenciales de rendimiento esperado basados en el vencimiento.
+
+La teoría de la segmentación del mercado asume que tanto los inversores como los prestatarios tienen preferencias por títulos a ciertos plazos, sin que los rendimientos en los demás les afecten significamente en sus decisiones. Bajo este supuesto, las tasas de interés en cada plazo vienen determinadas por la oferta y la demanda que exista en cada segmento del mercado.
+
+La teoría de la preferencia por la liquidez afirma que existe un sesgo creciente; de forma que la curva de rendimientos adquiere una pendiente ascendente más pronunciada de la que queda justificada por las expectativas sobre tasas futuras a fecha fija, porque los inversionistas prefieren prestar a corto plazo mientras que los prestatarios prefieren pedir prestado a largo plazo.
+
+#### Teoría de las expectativas puras
+
+Esta teoría se basa en el supuesto de que los tipos de interés a largo plazo deben reflejar los tipos de interés a corto plazo futuros esperados. Estos tipos esperados son los que se obtienen a partir de los tipos spot, y son los llamados forward.
+
+Bajo este supuesto, no existe preferencia por el plazo; ya que a los agentes les daría igual operar con un horizonte u otro, debido a que el resultado de la inversión sería el mismo.
+
+Los tipos forward representan exclusivamente tasas futuras esperadas. Así, toda la estructura del plazo en un momento dado refleja las expectativas actuales del mercado de las tasas futuras a corto plazo. Bajo este punto de vista, una estructura de plazo creciente, debe indicar que el mercado espera que las tasas de corto plazo a subir a lo largo del futuro relevante. Del mismo modo, una estructura a plazo fijo refleja una expectativa de que las tasas futuras a corto plazo serán mayormente constante, y una estructura de plazo descendente debe reflejar una expectativa de que las tasas futuras de corto plazo disminuirán constantemente.
+
+A pesar de esto, esta teoría tiene una deficiencia. No toma en cuenta los riesgos inherentes a la inversión en bonos e instrumentos similares. Si los forward pudiesen predecir con exactitud las tasas de interés futuras, entonces los precios futuros de los bonos serían conocidos con certeza. La rentabilidad de cualquier período de inversión sería segura e independiente del vencimiento del instrumento inicialmente adquirido y del momento en que el inversor necesitara liquidar el instrumento. Sin embargo, con la incertidumbre sobre las tasas de interés futuras y, por tanto, sobre los futuros precios de los bonos, estos instrumentos se convierten en inversiones riesgosas en el sentido de que se desconoce el rendimiento sobre algún horizonte de inversión.
+
+#### Teoría de la preferencia de liquidez
+
+El argumento central de esta teoría es que los tipos de interés a largo plazo deben ser siempre superiores a los tipos de interés a corto plazo. Dicho supuesto se basa en que los inversores prefieren la liquidez que les proporciona un vencimiento a corto plazo de sus inversiones e invertir en fondos durante períodos cortos de tiempo para ir renovándolos en vez de hacer inversiones a largo plazo.
+
+Dicho argumento establece que los inversores pueden estar motivados a escoger vencimientos a mayores plazos de vencimiento si se les ofrecen tasas superiores a la media de las tasas futuras esperadas por una prima de riesgo que está positivamente relacionada con el plazo hasta el vencimiento. Visto de otra forma, los tipos forward deberían reflejar tanto las expectativas de tipos de interés como una prima de liquidez (que es realmente una prima de riesgo), y la prima debería ser mayor para los vencimientos más largos.
+
+La prima de liquidez puede ser vista como una compensación adicional que demandan los inversores por mantener bonos de largo plazo con mayores riesgo de precio implicito. Esta prima puede ser medida como la diferencia entre la la tasa de interés forward y la tasa de corto plazo esperada:
+
+$$
+f_{n} =E(r_{n}) + \text{prima de liquidez}
+$$
+
+Sin embargo, las tasas forward implícitas no son una estimación imparcial de las expectativas del mercado de tasas de interés futuras ya que incluyen dicha prima de liquidez. Por lo tanto, una curva de rendimiento ascendente puede reflejar las expectativas de que las tasas de interés futuras aumentarán o serán planas (o incluso bajarán), pero con una prima de liquidez que crece con la madurez suficiente para producir una curva de rendimiento ascendente.
+
+De acuerdo con la teoría de la preferencia de liquidez, los tipos de interés forward superarán las expectativas del mercado de tasas de interés futuras. Incluso si se espera que las tasas se mantengan sin cambios, la curva de rendimiento se inclinará hacia arriba debido a la prima de liquidez.
+
+Una de las consecuencias de esta teoría implicaría que la mayoría de las curvas de rendimiento tengan pendientes positivas, sobre todo en el tramo largo de la curva.
+
+```{r}
+Yield <- c(-0.44, -0.434, -0.2995, -0.1314, 0.089, 0.2473, 0.4236, 0.6406, 0.8172, 0.906, 1.2692, 1.5627, 1.8524)
+vencimiento <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30)
+plot(vencimiento, Yield, type = "o", col = "green", main = "Rendimientos de los Bonos del Gobierno de Francia", xlab = "Vencimiento", ylab = "Rendimiento en (%)", sub = "Fuente: http://www.cnbc.com/bonds-france-treasurys/", pch = 18, col.sub = "red")
+abline(h=0, col = "grey")
+grid(col = "lightgray", lty = "dotted",
+     lwd = par("lwd"), equilogs = TRUE)
+```
+
+#### Teoría de la segmentación del mercado
+
+Esta teoría establece que no es necesario que haya relación alguna entre tipos a corto, medio y largo plazo, ya que el mercado está segmentado por períodos de vencimiento. Los inversores tienen una política de inversión respecto al plazo de la inversión preferido y esto hace que operen en el segmento que se ajuste a su preferencia. Esto quiere decir que los inversionistas del mercado de corto plazo no tienen nada que ver con los que operan en el segmento del mercado de largo plazo.
+
+De acuerdo a esta hipótesis, el tipo de interés a corto plazo se determina por la oferta y la demanda en el mercado de títulos a corto plazo. El tipo de interés a medio viene determinado por el mercado de activos con un vencimiento a medio plazo, y así sucesivamente.
+
+En el siguiente gráfico podremos observar los rendimientos de los Bonos AAA de de la administración central de la zona euro del 18 de abril de 2017.
+
+```{r}
+Yield <- c(-0.00789337, -0.00802729, -0.00819054, -0.00834835, -0.00857224, -0.00794325, -0.00666025, -0.00504048, -0.00333126, -0.00168394, -0.00017470, 0.00116865, 0.00234562, 0.00336916, 0.00425745, 0.00502946, 0.00570283, 0.00629302, 0.00681316, 0.00727419, 0.00768517, 0.00805352, 0.00838540, 0.00868588, 0.00895914, 0.00920870, 0.00943750, 0.00964801, 0.00984234, 0.01002228, 0.01018937, 0.01034494, 0.01049014)
+Maturity <- c(0.3, 0.6, 0.9, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30)
+yaxis <- c(-0.789337, -0.802729, -0.819054, -0.834835, -0.857224, -0.794325, -0.666025, -0.504048, -0.333126, -0.168394, -0.017470, 0.116865, 0.234562, 0.336916, 0.425745, 0.502946, 0.570283, 0.629302, 0.681316, 0.727419, 0.768517, 0.805352, 0.838540, 0.868588, 0.895914, 0.920870, 0.943750, 0.964801, 0.984234, 1.002228, 1.018937, 1.034494, 1.049014)
+plot(Maturity, yaxis, type = "o", col = "green", main = "Curva de Rendimiento de la zona euro", xlab = "Vencimiento", ylab = "Rendimiento en (%)", sub = "Fuente: www.ecb.europa.eu", pch = 18, col.sub = "red")
+abline(h=0, col = "grey")
+grid(col = "lightgray", lty = "dotted",
+     lwd = par("lwd"), equilogs = TRUE)
+```
+
+En esta curva de rendimientos, es fácil apreciar los diferentes tramos o segmentos a través de las diferentes pendientes que muestra la curva. De este modo, vemos un tramo bien diferenciado que transcurre entre 3 meses y dos años. Otro que transcurre de 1 a 15 años y el último de 15 a 30 años. Esto está justificado por la _teoría de los mercados segmentados_, ya que los agentes acuden a los diferentes plazos según sus necesidades.
+
+## Propiedades
+
+Los instrumentos de renta fija poseen ciertas características que explican el funcionamiento y la sensibilidad de los precios de estos instrumentos. De las variables que inciden en la sensibilidad del precio surgen ciertas propiedades de suma importancia para gestionar toda cartera de renta fija.
+
+Para comenzar, recordemos que el precio de un bono depende de tres variables principales: 
+
+1) los flujos del instrumento a lo largo del tiempo, que vendrán definidos por los cupones y amortizaciones del nominal,
+
+2) el tiempo que reste hasta el vencimiento, y
+
+3) el rendimiento del instrumento.
+
+De estas tres variables se desprenden siete (7) propiedades que nos permiten entender como evoluciona el precio en relación a cada una de ellas. 
+
+### 1ª propiedad: el precio vs. tipos de interés
+
+**El precio de los bonos se mueve en forma inversa a las tasas de interés.**
+
+El precio de un bono se mueve en dirección contraria al cambio en el rendimiento requerido del mismo. Esto debido a que el precio del bono no es más que el valor presente de los flujos de efectivo. A medida que las tasas de interés son mayores, el valor presente de caja flujo disminuye y por lo tanto el precio disminuye. En caso de que las tasas de interés aumentaran, el valor presente de cada flujo aumenta y por consecuencia, también lo hará el precio del bono.
+
+Veamos un ejemplo gráfico de la representación de esta propiedad. Supongamos un bono a 30 años de vencimiento que tiene una tasa cupón de 9%, un valor nominal de $\$1.000$ y un rendimiento de 9%. Dicho instrumento se cotiza en el mercado a un valor par.
+
+```{r, echo=FALSE}
+precios <- c()
+v_r <- seq(1, 12, 1)
+  for(i in 1:length(v_r)) {
+    #precio[i] <- precio(1000, 0.07, 30, v_r[i])
+    precios <- c(precios, precio(1000, 7, 30, v_r[i])) 
+  }
+
+plot(v_r, precios, type = "l", col = brewer.pal(4, "Spectral"),
+     main = "Precio Vs Tipos de Interés", xlab = "Rendimiento", 
+     ylab = "Precio", sub = "Gráfico 1")
+```
+
+Como podemos observar, si se da un descenso de un 2% en el rendimiento requerido, el precio se verá afectado por una forma positiva ascendiendo a $1.248,18.
+
+Si por el contrario, lo que ocurre es una subida de un 2% en los tipos de interés, el precio bajaría a $826,12.
+
+Si representamos gráficamente la relación precio/rendimiento para cualquier bono, podremos encontrar que dicha relación tiene una forma "curva", la cual es denominada convexa. La convexidad de la relación precio/rendimiento tiene importantes implicaciones para las propiedades de inversión de un bono.
+
+### 2ª propiedad: el tiempo a vencimiento
+
+**Con todos los demás factores constantes, mientras más lejos se encuentre el vencimiento de un bono, más sensible es su precio a un cambio en las tasas de interés**
+
+Bonos con mayores plazos hasta el vencimiento experimentarán mayores cambios, porcentuales, en los precios que bonos con plazos menores hasta el vencimiento, ante cualquier variación en los tipos de interés.
+
+Para comprender mejor esta propiedad, veamos la variación en los precios de dos instrumentos producidas por una disminución en el rendimiento de 2%. Dichos bonos sólo difieren en su vencimiento (el primero vence en 5 años y el otro en 10 años), ambos tienen una valor nominal de $1.000, un rendimiento de 9% y una tasa de cupón de 8%.
+
+La función descrita posteriormente describe los flujos de caja de un bono, junto con su precio.
+
+```{r, echo=FALSE}
+flujos <- function(p, r, ttm, y){
+  t <- c(1:ttm)
+  Flujo_Caja <- data.frame(t)
+  descuento <- c()
+  cupones <- rep(p * r, ttm - 1)
+  nominal <- p * (1 + r)
+  cf <- c(cupones, nominal)
+  Flujo_Caja$Flujos <- cf
+    for (i in t){
+      descuento <- c(descuento, 1 / (1 + y) ^ i)
+    }
+  vp <- cf * descuento
+  Flujo_Caja$descuento <- descuento
+  Flujo_Caja$VP <- vp
+  return(Flujo_Caja)
+}
+
+r <- 0.08 #Tasa Cupón
+p <- 1000 #Valor Nominal
+ttm <- 5 #Vencimiento
+
+y <- 0.09 #rendimiento
+P_9 <- flujos(p,r,ttm,y) #precio con un rendimiento de 6%
+
+y <- 0.07 #rendimiento
+P_7 <- flujos(p,r,ttm, y) #precio con un rendimiento de 4%
+
+Tabla_1 <- data.frame(Tiempo=P_9$t, CF_9=P_9$Flujos, FD_9=P_9$descuento, PV_9=P_9$VP, CF_7=P_7$Flujos, FD_7=P_7$descuento, PV_7=P_7$VP)
+kable(Tabla_1, caption = "Bono con vencimiento a 5 años")
+
+Precios <- c(sum(P_9$VP), sum(P_7$VP))
+Tabla_2 <- data.frame(Rendimiento=c(6,4),Precios=Precios)
+kable(Tabla_2, caption = "Variación del precio")
+
+Var_precio <- abs(sum(P_7$VP)/sum(P_9$VP) -1)
+print(paste0("Variación porcentual del precio ", percent(Var_precio)))
+```
+
+```{r, echo=FALSE}
+r <- 0.08 #Tasa Cupón
+p <- 1000 #Valor Nominal
+ttm <- 10 #Vencimiento
+
+y <- 0.09 #rendimiento
+P_9 <- flujos(p,r,ttm,y) #precio con un rendimiento de 9%
+
+y <- 0.07 #rendimiento
+P_7 <- flujos(p,r,ttm, y) #precio con un rendimiento de 7%
+
+Tabla_3 <- data.frame(Tiempo=P_9$t, CF_9=P_9$Flujos, FD_9=P_9$descuento, PV_9=P_9$VP, CF_7=P_7$Flujos, FD_7=P_7$descuento, PV_7=P_7$VP)
+kable(Tabla_3, caption = "Bono con vencimiento a 10 años")
+
+Precios <- c(sum(P_9$VP), sum(P_7$VP))
+Tabla_4 <- data.frame(Rendimiento=c(6,4),Precios=Precios)
+kable(Tabla_4, caption = "Variación del precio")
+
+Var_precio <- abs(sum(P_7$VP)/sum(P_9$VP) -1)
+print(paste0("Variación porcentual del precio ", percent(Var_precio)))
+```
+
+Tal como pudimos observar, el bono con menor tiempo hasta el vencimiento tuvo una variación porcentual en el precio de 8,31%, mientras que el segundo bono (vencimiento mayor) obtuvo una variación porcentual en el precio de 14,36%.
+
+Esto tiene que ver con el hecho de que ante esta variación en el rendimiento, si el emisor quisiera realizar una nueva emisión, los cupones de dichos instrumentos deberán ajustarse a las tasas actuales de la economía (cupones más bajos en este caso). Sin embargo, los bonos ya emitidos quedarán pagando los cupones a la misma tasa con la que fueron emitidos, por lo que los inversores que posean bonos con vencimiento a 10 años verán una apreciación en el precio de sus instrumentos mayor a la de los tenedores de bonos con un vencimiento menor. Los bonos antiguos tienen cupones mayores y serán más demandados por el mercado, con lo cual su precio se incrementará.
+ 
+### 3ª propiedad: sensibilidad del tiempo a vencimiento
+
+**La sensibilidad del precio de un bono aumenta con el vencimiento, pero a una tasa decre##ciente.**
+
+A medida que el tiempo a vencimiento es mayor, mayor es la variación en el precio, pero esta variación creciente se da a una tasa decreciente. Para poder observar esta diferencia en la sensibilidad del precio de un bono con respecto al tiempo al vencimiento, supongamos un total de 8 bonos, que presentan una misma tasa cupón (8%), un rendimiento de 5% y un mismo valor nominal de $1.000. La diferencia radica en su tiempo a vencimiento, transcurriendo entre 5 y 40 años entre ellos.
+
+Vamos a suponer un incremento en el rendimiento de 2% y observemos que ocurre con los precios de todos los instrumentos.
+
+```{r, echo=FALSE}
+ttm <- seq(5, 40, 5)
+r <- 8
+p <- 1000
+y <- 5
+Precios_5 <- c()
+Precios_7 <- c()
+Var_precio <- c()
+  
+for(i in 1:length(ttm)) {
+  Precios_5 <- c(Precios_5, round(precio(p,r,ttm[i],y), digits = 2))
+}
+
+y <- 7
+for(i in 1:length(ttm)) {
+  Precios_7 <- c(Precios_7, round(precio(p,r,ttm[i],y), digits = 2))
+}
+
+Var_precio <- c(Var_precio, abs(Precios_5/Precios_7-1))
+
+Tabla_5 <- data.frame(Vencimiento = ttm, Precio_y5 = Precios_5, Precio_y7 = Precios_7, Variación = percent(round(Var_precio, digits = 2)))
+kable(Tabla_5, caption = "Sensibilidad del tiempo a vencimiento")
+```
+
+```{r, echo=FALSE}
+Var_precio <- percent(Var_precio)
+plot(ttm, Var_precio, type = "l", col = heat.colors(2),
+     main = "Variación (%) del Precio Vs Tiempo al vencimiento",
+     xlab = "Tiempo al vencimiento", 
+     ylab = "Variación (%)",
+     sub = "Gráfico 2")
+```
+
+### 4ª propiedad: la tasa cupón
+
+**El riesgo de tasa de interés está inversamente relacionado con la tasa cupón del bono. Los precios de los bonos que tiene un cupón bajo son más sensibles a cambios en las tasas de interés, que los bonos que tienen una alta tasa cupón.**
+
+Esto se debe a que en los bonos con cupones más altos se da una más temprana recuperación del capital a través de los mismos.
+
+Supongamos dos bonos con un vencimiento idéntico de 20 años, un rendimiento de 7% e igual valor nominal de $1.000. Lo único en que difieren es en la tasa cupón. El primero tienen un cupón de 8%, mientras que la tasa cupón del segundo es de 5%. Vamos a evaluar la variación del precio en ambos instrumentos, ante una caída del 3% en las tasas de interés.
+
+```{r, echo=FALSE}
+r <- 0.08 #Tasa Cupón
+p <- 1000 #Valor Nominal
+ttm <- 20 #Vencimiento
+
+y <- 0.07 #rendimiento
+P_7 <- flujos(p,r,ttm,y) #precio con un rendimiento de 9%
+
+y <- 0.04 #rendimiento
+P_4 <- flujos(p,r,ttm, y) #precio con un rendimiento de 7%
+
+Tabla_6 <- data.frame(Tiempo=P_7$t, CF=P_7$Flujos, FD_7=P_7$descuento, PV_7=P_7$VP, FD_4=P_4$descuento, PV_4=P_4$VP)
+kable(Tabla_6, caption = "Bono con Cupón de 8%")
+
+Precios <- c(round(sum(P_7$VP), digits = 2), round(sum(P_4$VP), digits = 2))
+Tabla_7 <- data.frame(Rendimiento=c(7,4),Precios=Precios)
+kable(Tabla_7, caption = "Precios")
+
+Var_precio <- percent(abs(sum(P_4$VP)/sum(P_7$VP)-1))
+kable(Var_precio, caption = "Variación (%) del precio")
+
+
+r <- 0.05 #Tasa Cupón
+
+y <- 0.07 #rendimiento
+P_7 <- flujos(p,r,ttm,y) #precio con un rendimiento de 9%
+
+y <- 0.04 #rendimiento
+P_4 <- flujos(p,r,ttm, y) #precio con un rendimiento de 7%
+
+Tabla_8 <- data.frame(Tiempo=P_7$t, CF=P_7$Flujos, FD_7=P_7$descuento, PV_7=P_7$VP, FD_4=P_4$descuento, PV_4=P_4$VP)
+kable(Tabla_8, caption = "Bono con Cupón de 5%")
+
+Precios <- c(round(sum(P_7$VP), digits = 2), round(sum(P_4$VP), digits = 2))
+Tabla_9 <- data.frame(Rendimiento=c(7,4),Precios=Precios)
+kable(Tabla_9, caption = "Precios")
+
+Var_precio <- percent(abs(sum(P_4$VP)/sum(P_7$VP)-1))
+kable(Var_precio, caption = "Variación (%) del precio")
+```
+
+Como pudimos observar, el bono con mayor tasa cupón presentó una variación porcentual menor que la experimentada por el bono con menor tasa cupón. Tal como lo expresa la propiedad, los precios de los bonos que tiene un cupón bajo son más sensibles a cambios en las tasas de interés, que los bonos que tienen una alta tasa cupón.
+
+### 5ª propiedad: sensibilidad sobre la tasa de cupón
+
+**La sensibilidad del precio de un bono disminuye a medida que la tasa cupón es mayor pero a una tasa decreciente.**
+
+Para ver como se representa dicho efecto, supongamos nuevamente 8 bonos que tienen el mismo tiempo a vencimiento de 30 años y un mismo valor nominal de $1.000. La diferencia entre dichos bonos radica en las tasas cupones que ofrecen cada uno de ellos, las cuales varían entre 2% y 9%. Ante un incremento en la tasa de rendimiento, la cual pasa de 5% a 6%, veamos el efecto ocasionado en los precios de los instrumentos.
+
+```{r,echo=FALSE}
+r <- seq(2, 9, 1) #Vector de tasas cupones
+ttm <- 30
+p <- 100
+Precios_5 <- c()
+Precios_6 <- c()
+Var_precio <- c()
+
+y <- 5 #Rendimiento del 5% 
+for(i in 1:length(r)) {
+  Precios_5 <- c(Precios_5, round(precio(p,r[i],ttm, y), digits = 2))
+}
+
+y <- 6 #Rendimiento del 6%
+for(i in 1:length(r)) {
+  Precios_6 <- c(Precios_6, round(precio(p,r[i],ttm, y), digits = 2))
+}
+
+Var_precio <- c(Var_precio, abs(Precios_5/Precios_6-1))
+r <- percent(r/100)
+Tabla_3.10 <- data.frame(Tasa_Cupón = r, Precio_con_Rend_5 = Precios_5, Precio_con_Rend_6 = Precios_6, Variación = percent(round(Var_precio, digits = 2)))
+kable(Tabla_3.10, caption = "Sensibilidad sobre la tasa de cupón")
+
+```
+
+El siguiente gráfico podemos observar como a medida que la tasa de cupón es mayor, menor es la sensibilidad del precio ante variaciones en el rendimiento, pero esta sensibilidad, la cual es decreciente, también se da a una tasa decreciente.
+
+```{r, echo=FALSE}
+
+plot(r, Var_precio, type = "l", col = heat.colors(2),
+     main = "Variación (%) del Precio Vs Tasa cupón",
+     xlab = "Tasa cupón", 
+     ylab = "Variación (%) del Precio",
+     sub = "Gráfico 3.3")
+```
+
+### 6ta propiedad: diferencia en sensibilidad ante subidas o bajadas de tasas
+
+**La variación en el precio (en términos absolutos) cuando se produce un incremento del rendimiento a vencimiento es menor que la variación en el precio provocada por una disminución de igual magnitud en el rendimiento. Es decir, un incremento en el rendimiento provoca un cambio en el precio proporcionalmente menor que una disminución en el mismo.**
+
+Esta propiedad pone de manifiesto que la relación inversa que guardan el precio de un instrumento de renta fija y el rendimiento no se presenta de forma lineal o proporcional; sino que más bien es una función negativa o inversa y a su vez de tasa decreciente o convexa.
+
+Para poder evaluar esta propiedad, supongamos un bono de 5 años, con un nominal de $1.000 y una tasa cupón de 8%. Si la tasa de rendimiento es igual a 8% durante su emisión, el precio del bono será igual a su valor nominal. Ahora bien, evaluemos el comportamiento del precio del instrumento ante una incremento del rendimiento a una tasa de 10% y posteriormente ante una disminución del rendimiento a 6%.
+
+```{r, echo=FALSE}
+
+r <- 0.08 #Tasa Cupón
+p <- 100 #Valor Nominal
+ttm <- 5 #Vencimiento
+
+y <- 0.06 #rendimiento
+P_6 <- flujos(p,r,ttm,y) #precio con un rendimiento de 6%
+
+y <- 0.08 #rendimiento
+P_8 <- flujos(p,r,ttm, y) #precio con un rendimiento de 8%
+
+y <- 0.10 #rendimiento
+P_10 <- flujos(p,r,ttm, y) #precio con un rendimiento de 10%
+
+
+Tabla_3.11 <- data.frame(Tiempo=P_6$t, CF=P_6$Flujos, FD_6=P_6$descuento, PV_6=P_6$VP, FD_8=P_8$descuento, PV_8=P_8$VP,FD_10=P_10$descuento, PV_10=P_10$VP)
+kable(Tabla_3.11, caption = "Efecto de la dirección de los tipos de interés en el precio")
+
+Precios <- c(round(sum(P_6$VP), digits = 2), round(sum(P_8$VP), digits = 2), round(sum(P_10$VP), digits = 2))
+Tabla_3.12 <- data.frame(Rendimiento=c(6,8,10),Precios=Precios)
+kable(Tabla_3.12, caption = "Precios")
+
+Var_precio <- c(abs(sum(P_6$VP)/sum(P_8$VP)-1), sum(P_10$VP)/sum(P_8$VP)-1)
+Var_precio <- percent(Var_precio)
+Tabla_3.13 <- data.frame(Rendimiento = c(6,10), Variación = Var_precio)
+kable(Tabla_3.13)
+```
+
+Podemos observar que ante una disminución de 2% en el rendimiento, el precio sufrió una variación positiva de 8.42%. Mientras que ante un incremento en igual proporción, el precio varió negativamente un 7.58%. Como se mencionó anteriormente, la función del precio de un bono respecto a su rendimiento es negativa o inversa y a una tasa decreciente.
+
+### 7ma propiedad: sensibilidad respecto al nivel de tasas
+
+**Los precios de los bonos son más sensibles a cambios en la tasa de rendimiento cuando el bono es vendido con un rendimiento a vencimiento menor que el inicial (con el que fue emitido)**
+
+Para poder evaluar esta propiedad, supongamos dos bonos que tienen un vencimiento de 10 años y una tasa cupón de 6% sobre un nominal de $1.000. Veamos como se ven afectados los precios de los instrumentos ante una variación de un punto porcentual del rendimiento. El primer bono cotiza con un rendimiento de 9% y el segundo con un rendimiento de 4%.
+
+En la siguiente tabla veremos una comparación de los flujos del bono con un rendimiento del 9% y como se ven afectados dichos flujos ante una disminución de 1% en las tasas de interés.
+
+```{r, echo=FALSE}
+r <- 0.06 #Tasa Cupón
+p <- 1000 #Valor Nominal
+ttm <- 10 #Vencimiento
+
+y <- 0.09 #rendimiento
+P_10 <- flujos(p,r,ttm,y) #precio con un rendimiento de10%
+
+y <- 0.08 #rendimiento
+P_9 <- flujos(p,r,ttm, y) #precio con un rendimiento de 9%
+
+Tabla_3.14 <- data.frame(Tiempo=P_10$t, CF=P_10$Flujos, FD_10=P_10$descuento, PV_10=P_10$VP, FD_9=P_9$descuento, PV_9=P_9$VP)
+kable(Tabla_3.14, caption = "Bono con rendimiento de 10%")
+
+Precios <- c(round(sum(P_10$VP), digits = 2), round(sum(P_9$VP), digits = 2))
+Tabla_3.15 <- data.frame(Rendimiento=c(10,9),Precios=Precios)
+kable(Tabla_3.15, caption = "Precios")
+
+Var_precio <- abs(sum(P_9$VP)/sum(P_10$VP)-1)
+print(paste0("Variación porcentual del precio ", percent(Var_precio)))
+
+y <- 0.04 #rendimiento
+P_4 <- flujos(p,r,ttm,y) #precio con un rendimiento de4%
+
+y <- 0.03 #rendimiento
+P_3 <- flujos(p,r,ttm, y) #precio con un rendimiento de 3%
+
+Tabla_3.17 <- data.frame(Tiempo=P_4$t, CF=P_4$Flujos, FD_4=P_4$descuento, PV_4=P_4$VP, FD_3=P_3$descuento, PV_3=P_3$VP)
+kable(Tabla_3.17, caption = "Bono con rendimiento de 3%")
+
+
+Precios <- c(round(sum(P_4$VP), digits = 2), round(sum(P_3$VP), digits = 2))
+Tabla_3.18 <- data.frame(Rendimiento=c(4,3),Precios=Precios)
+kable(Tabla_3.18, caption = "Precios")
+
+Var_precio <- abs(sum(P_3$VP)/sum(P_4$VP)-1)
+print(paste0("Variación porcentual del precio ", percent(Var_precio)))
+```
+
+Tal como se observó, el bono con un rendimiento menor sufrió una variación porcentual del precio mayor (8,06%). Lo que demuestra que cuanto más bajo es el rendimiento existe una mayor sensibilidad en el precio del instrumento.
+
+Vistas estas siete propiedades esenciales de los bonos, ahora podremos tener una mejor percepción de la sensibilidad del precio del bono ante variaciones en cualquiera de sus tres componentes principales.
+
+# Medidas de Riesgo
+
+## Duración
+
+Durante la vida de un Bono se producen flujos por el pago de cupones y las amortizaciones de capital, por esta razón es necesario una medida del vencimiento promedio de estos flujos futuros, ya que la reinversión de los flujos genera un efecto interesante cuando se piensa en la recuperación del capital invertido, entonces el vencimiento promedio termina siendo menor. En el caso de un bono cero cupón, que no tiene flujos intermedios durante su vida, la madurez efectiva del bono es igual a su vencimiento.
+
+Frederik Macaulay, en 1938, define la _Duración_ de un bono como su madurez efectiva. La _Duración_ de Macaulay no es más que la media ponderada con respecto al tiempo de cada flujo (cupón y/o principal) que produce el bono. Dicha ponderación asociada al tiempo está relacionada con la importancia que cada flujo tiene con respecto al precio del bono. De hecho, el peso de cada flujo es la proporción del flujo en relación al valor total del bono, es decir, el valor actual del flujo dividido entre el precio del bono. 
+
+Recordemos que el precio de un bono viene definido por 
+
+$$P = \frac{C_1}{(1+r)^1} + \frac{C_2}{(1+r)^2} + ... + \frac{C_t}{(1+r)^t}=\displaystyle \sum_{t =1}^n \frac{C_{n}}{(1+r)^n}$$
+
+Donde
+
+- $C_i$ son los flujos en el tiempo $i$, recordemos que el último flujo incluye al nominal.
+
+- $r$ es el rendimiento.
+
+- $n$ tiempo de vencimiento del bono.
+
+Una medida de la sensibilidad del precio (variación del precio) a los cambios en las tasas de interés es la duración. La duración es una medida ponderada de los flujos o cupones de un bono, esta coincide con la primera derivada del precio en función de las tasas de interés dividida entre el precio, veamos matemáticamente como se expresa esto. 
+
+Si calculamos la primera derivada del precio en relación a las tasas de interés nos queda:
+
+$$
+\begin{array}{rl}
+\displaystyle \frac{dP}{dr} & = \displaystyle \frac{d}{dr}\left( \frac{C_1}{(1+r)^1} + \frac{C_2}{(1+r)^2} + ... + \frac{C_n}{(1+r)^n} \right)\\
+& = \displaystyle\frac{d}{dr}\left( C_1(1+r)^{-1} + C_2(1+r)^{-2} + ... + C_t(1+r)^{-n} \right)\\
+& = \displaystyle \frac{d}{dr}(C_1(1+r)^{-1}) + \frac{d}{dr}(C_2(1+r)^{-2}) + ... + \frac{d}{dr}(C_t(1+r)^{-n})\\
+& = (-1)C_1(1+r)^{-1-1} + (-2)C_2(1+r)^{-2-1} + ... + (-n)C_t(1+r)^{-n-1}\\
+& = (-1)C_1(1+r)^{-2} + (-2)C_2(1+r)^{-3} + ... + (-n)C_t(1+r)^{-(n+1)}\\
+& = \displaystyle \frac{(-1)C_1}{(1+r)^{2}} + \frac{(-2)C_2}{(1+r)^{3}} + ... + \frac{(-n)C_t}{(1+r)^{n+1}}\\
+& = \displaystyle \frac{1}{1+r}\frac{(-1)C_1}{(1+r)} + \frac{1}{1+r}\frac{(-2)C_2}{(1+r)^{2}} + ... +\frac{1}{1+r} \frac{(-n)C_t}{(1+r)^{n}}\\
+\displaystyle \frac{dP}{dr} & = \displaystyle -\frac{1}{1+r}\left[\frac{(1)C_1}{(1+r)} + \frac{(2)C_2}{(1+r)^{2}} +...+\frac{(n)C_t}{(1+r)^{n}} \right]
+\end{array}
+$$
+
+Si dividimos entre el precio nos queda:
+
+$$
+\begin{array}{rl}
+\displaystyle \frac{1}{P}\frac{dP}{dr} & = \displaystyle-\frac{1}{1+r}\frac{1}{P}\left[\frac{(1)C_1}{(1+r)} + \frac{(2)C_2}{(1+r)^{2}} +...+\frac{(n)C_t}{(1+r)^{n}} \right]\\
+& = \displaystyle-\frac{1}{1+r}\left[\frac{\frac{(1)C_1}{(1+r)} + \frac{(2)C_2}{(1+r)^{2}} +...+\frac{(n)C_t}{(1+r)^{n}}}{P} \right]
+\end{array}
+$$
+
+Recordemos que la expresión dentro los paréntesis es la duración de Macaulay $D_{mac}$, por lo tanto la variación del precio con respecto a cambios en las tasas de rendimiento es igual a 
+
+$$\frac{1}{P}\frac{dP}{dr} = -\frac{1}{1+r}D_{mac}=-\frac{D_{mac}}{1+r}$$
+
+Por otra parte, podemos utilizar el concepto de **"Centro de Masa"** para entender de manera más sencilla la Duración. Físicamente hablando,el centro de masa es una posición definida en relación a un objeto o a un sistema de objetos. Es el promedio de la posición de todas las partes del sistema, ponderadas de acuerdo a sus masas. Esto no es más que la única posición en la cual los vectores de posición ponderados de todas las partes de un sistema suman cero, es decir, se equilibran.
+
+Lo interesante acerca del centro de masa de un objeto o de un sistema, es que "es el punto en donde actúa cualquier fuerza uniforme sobre el objeto". Esto facilita la resolución para describir movimientos de objetos con formas no regulares y sistemas complicados. Se dice que simplifica porque permite tratar a dichos objetos como si toda su masa estuviera concentrada en un objeto pequeño ubicado en el centro de masa. Si se empuja un objeto rígido en su centro de masa, entonces el objeto siempre se moverá como si fuera una masa puntual. No va a rotar alrededor de ningún eje, sin importar la forma que tenga. Si el objeto es sometido a la acción de una fuerza fuera de equilibrio en algún otro punto, entonces empezará a rotar alrededor del centro de masa.
+
+Ahora bien, ¿Cómo relacionamos este concepto con la Duración de un Bono?. En un tratamiento de sistemas de masas puntuales, el centro de masas es el punto donde, a efectos inerciales, se supone concentrada toda la masa del sistema. En el caso de un sistema de masas discreto, formado por un conjunto de masas puntuales, el centro de masas se puede calcular como:
+
+$$
+r_{cm}= \frac{\sum_{i} m_{i}r_{i}}{\sum_{i} m_{i}}=\frac{1}{M}\sum_{i} m_{i}r_{i} \ \ \ \ \ \ (ecuación\ 1)  
+$$
+
+**M**, masa total del sistema de partículas.
+
+$m_{i}$, masa de la partícula $i$-ésima.
+
+$r_{i}$, vector de posición de la masa $i$-ésima respecto al sistema de referencia supuesto.
+
+Como podemos observar, el centro de masa es el promedio de la posición de todas las partes del sistema, ponderadas de acuerdo a sus masas. De manera análoga, la Duración pondera cada flujo en relación al tiempo. En lugar de la distancia que se utiliza en el sistema de partículas, se utiliza el tiempo y en lugar de la masa de la partícula se utiliza el tamaño del flujo.
+
+Esto se puede expresar como: 
+
+$$
+w_{t}= \frac{\frac{CF_{t}}{(1+r)^t}}{Precio} \ \ \ \ \ \ (ecuación\ 2)
+$$
+
+La _Duración_ calcula el valor actual de cada uno de los flujos de efectivo y los pondera por el tiempo hasta que son recibidos.
+
+$$
+D=\sum_{t=1}^T t*w_{t} \ \ \ \ \ \ (ecuación\ 3)
+$$
+
+Donde:
+
+El Precio se refiere a la masa total del sistema de partículas **(M)**.
+
+$w_{t}$ se refiere a la masa de la partícula i-ésima $m_{i}$.
+
+y, $t$ se refiere al vector de posición de la masa i-ésima respecto al sistema de referencia supuesto $r_{i}$.
+
+
+Entonces entendiendo la relación antes expuesta tenemos que la _Duración_ de un instrumento de renta fija es igual al promedio ponderado de los períodos en que los cupones son pagados y que los ponderadores son, justamente, el valor presente de cada flujo de caja individual. Por lo que la _Duración_ será el centro de masa de los flujos que equilibran el pago de los flujos más cercanos y lejanos.
+
+Sustituyendo la **ecuación 2** en la **ecuación 3** nos queda: 
+
+$$
+D = \frac{\sum_{t=1}^T \frac{CF_{t}*t}{(1+r)^t}}{Precio} \ \ \ \ \ \ (ecuación\ 4)
+$$
+
+Ahora bien, cuando Macaulay definió, el concepto de _Duración_, lo hizo para medir el peso promedio en el tiempo, de cada flujo del bono. De hecho, usualmente la _Duración_ es expresada en términos temporales. Una interpretación más correcta sería verla como la volatilidad en el precio de un bono cero cupón con ese número de años hasta su vencimiento. Sin embargo, expresar la _Duración_ en términos temporales dificulta la interpretación de la misma en ciertos valores. Por ejemplo, si pensamos en la _Duración_ expresada en términos temporales, una Duración negativa no tendría mucho sentido, sin embargo, si la evaluamos en términos de porcentaje de cambio en el precio, dicho número nos indica que ante un cambio de 100 puntos básicos en el rendimiento, el precio del bono va a cambiar alrededor de un 4%, pero el cambio será en la misma dirección que ocurrió la variación de las tasas de rendimiento.
+
+Dada la anterior interpretación, podemos entender la _Duración_ como el período de tiempo en el que la reinversión de los flujos futuros de fondos de un instrumento de renta fija compensa la variación, en el precio del mismo, derivada de una oscilación en los tipos de interés. En otras palabras, es una medida de la sensibilidad aproximada del valor de un bono a los cambios en la tasa.
+
+Veamos un ejemplo, supongamos que queremos hallar la duración de un bono con cupones del 6% pagaderos por anualidades vencidas si su rendimiento hasta el vencimiento es del 6% y su vida es de tres años. El bono tiene un valor nominal de $100 y se cotiza en el mercado a valor par.
+
+$$
+\begin{array}{rl}
+D &= \frac{\sum_{t=1}^T \frac{CF_{t}*t}{(1+r)^t}}{Precio} \ \ \ \ \ \ (ecuación\ 4)\\
+D &= \frac{\frac{6}{1+0,06}+\frac{6*2}{(1+0,06)^2}+\frac{106*3}{(1+0,06)^3}}{100}\\
+D &= \frac{5,6604+10,6800+266,9989}{100}\\
+D &= 2,8334
+\end{array}
+$$
+
+Resolución en R:
+
+Primero debemos determinar el precio del bono. Para ello utilizaremos la función precio.
+
+```{r}
+p <- precio(100, r = 6, 3, 6)
+p
+```
+
+Una vez obtenido el precio, vamos a definir la función `DMAC`, que calculará la duración de un bono. Dicha función recibirá como parámetros el precio `precio`, la tasa cupón `cupon`, la tasa de rendimiento `rendimiento`, el valor nominal del bono `nominal` y el tiempo al vencimiento `tiempo_vencimiento`.
+
+```{r}
+DMAC <- function(precio, cupon,rendimiento,nominal,tiempo_vencimiento){
+  cupon <- cupon/100
+  rendimiento <- rendimiento/100
+  sum<-0
+  
+    for(t in 1:tiempo_vencimiento){
+       sum <- sum + ( ((cupon*nominal)*t) / ((1+rendimiento)^t) )
+    }
+  
+  sum <- sum + ( (nominal*tiempo_vencimiento) / ((1+rendimiento)^tiempo_vencimiento) )
+  
+  D <- sum/precio
+  
+  return(D)
+}
+
+DMAC(p, 6, 6, 100, 3)
+```
+
+### Propiedades de la Duración
+
+La duración depende de tres variables fundamentales:
+
+** Tiempo hasta el vencimiento: cuando el tiempo hasta el vencimiento es mayor, mayor es la duración.
+
+** La tasa de cupón: mientras menor sea la tasa cupón, la duración del bono será mayor. Si la tasa cupón es cero (bono cero cupón), la duración del bono es igual a su vencimiento.
+
+** Rendimiento al vencimiento: mientras mayor es el rendimiento al vencimiento del bono, menor será su duración debido a la reinversión de los flujos futuros.
+
+Definidas estas variables que influyen en la duración de todo instrumento de renta fija, pasaremos a describir sus propiedades esenciales.
+
+#### 1ª propiedad: la duración de un bono es mayor cuando la tasa de cupón es más baja
+
+_Manteniendo el vencimiento constante, la duración de un bono es mayor cuando la tasa de cupón es más baja_.
+
+Esta propiedad tiene que ver con el impacto de cupones anticipados en el vencimiento promedio de los pagos de un bono. Cuanto más bajos estos cupones, menos peso tienen estos pagos anticipados en el vencimiento medio ponderado de todos los pagos del bono. Es decir, cuanto menores sean los flujos, producto de la baja tasa cupón, mayor será el tiempo de recuperación de la inversión.
+
+El siguiente gráfico muestra como la duración de un bono de 30 años de madurez, con un nominal de $1.000 y rendimiento de 5%, guarda una relación inversa con respecto a la tasa cupón, es decir, a medida que la tasa cupón sea mayor, la duración será menor y viceversa. Sin embargo, esta relación no es lineal, sino que se da a una tasa decreciente. Cuando la tasa cupón es demasiado alta, la contribución a la reducción en la duración es muy pequeña, en comparación cuando la tasa cupón es menor.
+
+```{r, echo=FALSE}
+cupones <- seq(0,20,1)
+precios_1 <- c()
+  for(i in 1:length(cupones)) {
+    #precio[i] <- bondprc(1000, cupon[i], 30, 0.05)
+    precios_1 <- c(precios_1, precio(1000, cupones[i], 30, 5)) 
+  }
+
+duraciones <- c()
+for(i in 1:length(cupones)){
+  for(j in 1: length(precios_1)){
+    if (i==j){
+    #duracion[i]<-Dmac(precio[j],1000,cupon[i],0.05,30)
+    duraciones <- c(duraciones, DMAC(precios_1[j],cupones[i],5, 1000, 30))  
+    }
+  }
+}
+
+datos_1 <- data.frame(cupones, duraciones)
+
+f<- ggplot(datos_1, aes(x = cupones, y = duraciones)) +
+    geom_line(color = "green") + labs(title = "Duración Vs. Tasa Cupón",
+       subtitle = "1ª Propiedad",x="Tasa Cupón", y="Duración",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+
+#### 2ª propiedad: la duración de un bono incrementa con el tiempo a vencimiento
+
+_A medida que el plazo de un bono es mayor, el cobro del principal se aleja del día de hoy, lo que hace que la recuperación de la inversión se haga a un plazo más grande_.
+
+Si un bono es cero cupón, la recuperación del capital invertido se dará en el vencimiento, por el hecho de que no hay flujos durante su vida ni tampoco reinversiones de tales flujos; este es el único caso en el que la duración incrementa de forma proporcional o lineal. Sin embargo, a medida que la tasa cupón sea más alta esto beneficia con el paso del tiempo, ya que se van produciendo recuperaciones anticipadas de capital, y por consiguiente se empieza a recuperar la inversión en un plazo menor.
+
+Los bonos de largo plazo generalmente serán bonos de alta duración, la duración es una mejor medida de la naturaleza de largo plazo del bono, ya que también explica los pagos de cupones. Mientras que el vencimiento es una medida adecuada sólo cuando el bono no paga cupones; Entonces la madurez y la duración son iguales.
+
+El gráfico 5.2 muestra como va incrementando la duración de un bono de tasa cupón de 5%, un valor nominal de $1.000 y un rendimiento de 5%, en función al vencimiento que transcurre de 0 a 80 años. Mientras mayor sea el tiempo a vencimiento del bono, mayor será la duración; pero este crecimiento se da a una tasa menos que proporcional. Cuando un bono tiene un vencimiento muy largo empieza a tomar la forma de una renta perpetua, y un año adicional de vencimiento apenas altera las variables del instrumento.
+
+```{r, echo=FALSE}
+vencimientos_2 <- seq(1,80,1)
+duraciones_2 <- c()
+for(i in 1:length(vencimientos_2)){
+    duraciones_2 <- c(duraciones_2, DMAC(1000,5,5, 1000, vencimientos_2[i]))
+   }
+
+datos_2 <- data.frame(vencimientos_2, duraciones_2)
+
+f<- ggplot(datos_2, aes(x = vencimientos_2, y = duraciones_2)) +
+    geom_line(color = "green") + labs(title = "Duración Vs. Vencimiento",
+       subtitle = "2ª Propiedad",x="Vencimiento", y="Duración",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+En el siguiente gráfico vemos la influencia del tiempo al vencimiento y la tasa de cupón en la duración del mismo bono expuesto anteriormente. Puede apreciarse que la duración crece de 0 a 40 años con el tiempo a vencimiento de forma lineal cuando la tasa cupón es cero y como ese crecimiento se da de una forma más suave cuando la tasa cupón es de 6% o 10%.
+
+```{r, echo=FALSE}
+
+zorig<-c()
+z<-c()
+for (j in seq(1,40,1)) {
+  for (i in seq(0,10,1)) {
+    zorig <- c(zorig,c(i,j,DMAC(precio = 1000,cupon = i,rendimiento = 5,nominal = 1000, tiempo_vencimiento = j)))
+  }
+}
+z<-matrix(zorig,ncol = 3,byrow=TRUE)
+colnames(z)<-c("c","t","duracion")
+zdf<-as.data.frame(z)
+scatter3D(zdf$c, zdf$t, zdf$duracion,
+          pch= ".", bty="f", ticktype = "detailed", type="p", cex = 2, colkey=FALSE, phi = 15, theta = 35, expand = 0.5, xlab = "TC", ylab = "Tiempo", zlab="Duración",main="Duración Vs. Tasa Cupón Vs. Tiempo")
+
+```
+
+
+#### 3ª propiedad: la duración de Macaulay es más alta cuando la tasa de rendimiento es más baja
+
+_Cuando la tasa de rendimiento del instrumento es mayor la duración es más baja, gracias a que las reinversiones de los cupones son mayores_.
+
+Así como un mayor rendimiento reduce el valor presente de todos los pagos del bono, también reduce el valor de los pagos a distancia por un monto proporcional mayor. Por lo tanto, a mayores rendimientos, una fracción más alta del valor total del bono cae en sus pagos más cercanos, reduciendo así el vencimiento efectivo. En el caso de los bonos cero cupón, la duración es igual al vencimiento, independientemente del YTM.
+
+
+```{r,echo=FALSE}
+rendimientos_3 <- seq(1,20,1)
+precios_3 <- c()
+  for(i in 1:length(rendimientos_3)) {
+    #precio[i] <- bondprc(1000, cupon[i], 30, 0.05)
+    precios_3 <- c(precios_3, precio(n = 1000, r = 5, ttm = 30, y = rendimientos_3[i])) 
+  }
+
+duraciones_3 <- c()
+for(i in 1:length(rendimientos_3)){
+  for(j in 1: length(precios_3)){
+    if (i==j) {
+    duraciones_3 <- c(duraciones_3, DMAC(precio = precios_3[j],cupon = 5, rendimiento = rendimientos_3[i], nominal = 1000, tiempo_vencimiento = 30))  
+    }
+  }
+}
+
+datos_3 <- data.frame(rendimientos_3, duraciones_3)
+
+f<- ggplot(datos_3, aes(x = rendimientos_3, y = duraciones_3)) +
+    geom_line(color = "green") + labs(title = "Duración Vs. Rendimiento",
+       subtitle = "3ª Propiedad",x="Rendimiento", y="Duración",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+
+```
+
+En el gráfico anteriormenta puede apreciarce que el efecto más importante es el tiempo a vencimiento sobre el rendimiento. Sobre todo se aprecia este efecto en los bonos que tienen un plazo a vencimiento pequeño, el rendimiento apenas afecta la duración del bono. A medida que el bono tiene un tiempo a vencimiento mayor el efecto del rendimiento se incrementa, porque afecta a un número mayor de flujos, y por tanto a sus reinversiones.
+
+```{r,echo=FALSE}
+zorig<-c()
+z<-c()
+for (j in 1:30) {
+  for (i in seq(0,10,1)) {
+    zorig <- c(zorig,c(i,j,DMAC(precio = 1000,cupon = 5,rendimiento = i,nominal = 1000, tiempo_vencimiento = j)))
+  }
+}
+z<-matrix(zorig,ncol = 3,byrow=TRUE)
+colnames(z)<-c("r","t","duracion")
+zdf<-as.data.frame(z)
+scatter3D(zdf$r, zdf$t, zdf$duracion,
+          pch= ".", bty="f", ticktype = "detailed", type="p",cex=2,colkey=FALSE, phi = 25, theta = 35, expand=0.5, xlab = "Rendimiento", ylab = "Tiempo", zlab="Duración",main="Duración Vs. Rendimiento Vs. Tiempo")
+
+```
+
+#### Relación de la tasa de cupón Vs. rendimiento
+
+Como pudimos ver en las propiedades descritas anteriormente, la tasa cupón y la tasa de rendimiento guardan relaciones inversas con la duración. Sin embargo, dicha relación no es exacta, ya que el rendimiento tiene un comportamiento más lineal con respecto a la duración que la tasa cupón. 
+
+Ante expectativas de reinversiones menores, la importancia de los cupones disminuye, debido a las bajas tasas de rendimiento. A medida que aumenta la tasa de rendimiento, la duración disminuye, sin embargo este efecto será mayor cuando la tasa cupón es menor.
+
+```{r,echo=FALSE}
+zorig<-c()
+z<-c()
+for (j in seq(0,20,1)) {
+  for (i in seq(0,8,0.01)) {
+      zorig <- c(zorig,c(i,j,DMAC(precio = 1000,cupon = j, rendimiento = i,nominal = 1000, tiempo_vencimiento = 30)))  
+   }
+}
+z<-matrix(zorig,ncol = 3,byrow=TRUE)
+colnames(z)<-c("c","r","duracion")
+zdf<-as.data.frame(z)
+scatter3D(zdf$c, zdf$r, zdf$duracion,
+          pch= ".", bty="f", ticktype = "detailed", type="p", cex = 4,colkey=FALSE, phi = 15, theta = 45, expand = 0.5, xlab = "Cupón", ylab = "Rendimiento", zlab="Duración",main="Duración Vs. Tasa Cupón Vs. Rendimiento")
+```
+
+
+## Duración modificada
+
+Otro concepto que se deriva de la expresión de la duración es el de la duración modificada, la cual se define como $$D_{mod}=\frac{D_{mac}}{1+r}$$
+
+Está debe entenderse como la aproximación del cambio porcentual en el precio del bono cuando el rendimiento cambia 1%.
+
+Sustituyendo la duración modificada en la primera derivada del precio con respecto al rendimiento dividida entre el precio tenemos:
+
+$$\frac{1}{P}\frac{dP}{dr}=-D_{mod}$$
+
+Podemos decir entonces que existe una relación inversa entre la variación del precio debido a cambios en la tasa de rendimiento y la duración modificada, es decir, el precio de un bono se mueve en la dirección opuesta a los cambios en las tasas de interés.
+
+La duración modificada es la recta tangente utilizada para predecir el valor del cambio en los precios de un bono debido a pequeños cambios en las tasas de rendimiento, ésta medida  es eficiente cuando se quiere medir la sensibilidad de los precios a cambios pequeños en las tasas de interés (menores o iguales al 1%), en el caso cuando se tienen cambios superiores a este 1% se tiene que recurrir a otras medidas como la convexidad. 
+
+## Convexidad
+
+La convexidad se define como la segunda derivada del precio con respecto al rendimiento dividido entre el precio del bono, al hacer esto se tiene la aproximación de cambios en el precio de un bono cuando las tasas de rendimiento son mayores.
+
+Calculemos la segunda derivada de la variación del precio con respecto a cambios en el rendimiento.
+
+$$
+\begin{array}{rl}
+\displaystyle \frac{d^2P}{dr^2} & = \displaystyle \frac{dP}{dr}\left[-\frac{1}{1+r}\left(\frac{(1)C_1}{(1+r)} + \frac{(2)C_2}{(1+r)^{2}} +...+\frac{(n)C_t}{(1+r)^{n}} \right)\right]\\
+& = \displaystyle \frac{dP}{dr}\left[-(1)C_1(1+r)^{-2} - (2)C_2(1+r)^{-3} -...- (n)C_t(1+r)^{-(n+1)}\right]\\
+& = \displaystyle \frac{dP}{dr}(-(1)C_1(1+r)^{-2}) + \frac{dP}{dr}(-(2)C_2(1+r)^{-3})+ ... + \frac{dP}{dr}( -(n)C_t(1+r)^{-(n+1)})\\
+& = -(1)(-2)C_1(1+r)^{-2-1} -(2)(-3)C_2(1+r)^{-3-1} - ... -(n)(-(n+1))C_t(1+r)^{-(n+1)-1}\\
+& = (1)(2)C_1(1+r)^{-3} +(2)(3)C_2(1+r)^{-4} + ... +(n)(n+1)C_t(1+r)^{-(n+2)}\\
+& = \displaystyle \frac{(1)(2)C_1}{(1+r)^{3}} +\frac{(2)(3)C_2}{(1+r)^{4}} + ... +\frac{(n)(n+1)C_t}{(1+r)^{n+2}}\\
+\displaystyle \frac{d^2P}{dr^2} & = \displaystyle  \frac{1}{(1+r)^2}\left[ \frac{(1)(2)C_1}{(1+r)} +\frac{(2)(3)C_2}{(1+r)^{2}} + ... +\frac{(n)(n+1)C_t}{(1+r)^{n}}\right]
+\end{array}
+$$
+
+Dividiendo entre el precio nos queda:
+
+$$\displaystyle \frac{1}{P}\frac{d^2P}{dr^2} = \displaystyle \frac{1}{(1+r)^2}\frac{1}{P}\left[  \frac{(1)(2)C_1}{(1+r)} +\frac{(2)(3)C_2}{(1+r)^{2}} + ... +\frac{(n)(n+1)C_t}{(1+r)^{n}} \right]$$
+
+Obtenemos la cual es la definición de convexidad, es decir
+
+$$\text{Convexidad} = \frac{1}{P}\frac{d^2P}{dr^2}$$
+
+Está definición es útil cuando se tienen cambios en las tasas de rendimiento mayores que el 1%.
+
+La convexidad lo que hace es aproximar el precio del bono con el polinomio de Taylor de segundo orden.
+
+Estimemos la variación del precio por un polinomio de Taylor de segundo grado, es decir:
+
+$$dP = \frac{dP}{dr}dr + \frac{d^2 P}{dr^2}(dr)^2+\text{error}$$
+
+Si dividimos esta aproximación entre el precio, tenemos:
+
+$$
+\begin{array}{rl}
+\displaystyle \frac{dP}{P} & = \displaystyle \frac{\frac{dP}{dr}dr + \frac{d^2 P}{dr^2}(dr)^2+\text{error}}{P}\\
+\displaystyle \frac{dP}{P} & = \displaystyle\frac{1}{P}\frac{dP}{dr}dr + \frac{1}{P}\frac{d^2 P}{dr^2}(dr)^2+\frac{1}{P}\text{error}
+\end{array}
+$$
+
+Donde el primer término de esta expresión es la duración modificada $\frac{1}{P}\frac{dP}{dr}$ multiplicado por la variación de la tasa de interés $dr$ y el segundo término es la convexidad $\frac{1}{P}\frac{d^2P}{dr^2}$.
+
+Vamos a construir una función en R para calcular el valor de la convexidad de un bono. Los parámetros de entrada de la misma serán:
+
+- `c` : corresponde al valor de la tasa cupón.
+
+- `r` : Tasa de interés.
+
+- `n` : Valor Nominal, es el pago al vencimiento del bono, expresado en dólares.
+
+- `ttm` : Tiempo de vencimiento del bono, expresado en años.
+
+La cantidad que queremos calcular con esta función viene dada por la fórmula siguiente:
+
+$$\text{Convexidad} = \frac{1}{P}\frac{d^2P}{dr^2}= \frac{1}{(1+r)^{2} P}\displaystyle \sum_{t=1}^n \frac{(t)(t+1)C_t}{(1+r)^{t}}$$
+
+Esta función internamente calculará y retornará el valor de la convexidad, utilizando la función `precio()`, basándose en la fórmula anterior.
+
+```{r}
+convexidad <- function(r,y,n,ttm) {
+  
+  P <- precio(n, r, ttm, y)
+  r <- r/100
+  y <- y/100
+  sum <- 0
+  for(i in 1:ttm){
+      sum <- sum + (i*(i+1)*(r*n)/(1+y)^i)
+  }
+  
+  conv <- (1/((1+y)^2*P))*(sum + (ttm*(ttm+1)*n/(1+y)^ttm))
+  
+  return(conv)
+}
+```
+
+Calculemos el valor de la convexidad de un bono que tiene un tiempo de vencimiento de 14 años, una tasa cupón de 3% un rendimiento de 10% y un valor nominal de $1.000.
+
+```{r}
+convexidad(3,10,1000,14)
+```
+
+La convexidad es una medida de segundo orden, ante bonos con igual duración, el de mayor convexidad será el que mayor beneficio aporte al inversor ante el riesgo de tipos de interés. Esto lo vamos a poder ver reflejado en el gráfico a continuación.
+
+```{r, echo=FALSE}
+ren<-seq(0,100,1)
+P_1<-c()
+
+for(i in 1:length(ren)){
+  P_1 <- c( P_1, precio(n = 1000, r = 9,ttm = 10, y = ren[i]) )
+}
+
+datos_4 <- data.frame(x=ren, y=P_1)
+f<-ggplot(data = datos_4, aes(x,y)) + geom_line()+
+  labs(title = "Precio vs Rendimiento", x="Rendimiento", y="Precio",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+Procedemos ahora a calcular la recta tangente en el punto $r^*$
+
+```{r}
+# La recta tangente en un punto (r*,P) es 
+# y-P = a(x-r*)
+# y = ax + (P-ar*)
+# Donde "a" es la pendiente y "P-ar*" es el punto de corte con el eje y
+
+# Calculo de la Pendiente, utilizamos la derivada del precio evaluada en el punto r*
+pendiente <- function(cupon,rendimiento,nominal,tiempo_vencimiento) {
+  cupon <- cupon/100
+  rendimiento <- rendimiento/100
+  sum<-0
+  for(i in 1:tiempo_vencimiento){
+      sum<-sum - (i*(cupon*nominal)/(1+rendimiento)^(i+1))
+  }
+  
+  dP<- sum - ( tiempo_vencimiento*nominal/(1+rendimiento)^(tiempo_vencimiento+1) )
+  return(dP)
+}
+```
+
+```{r, echo=FALSE}
+# Cupón, nominal y tiempo de vencimiento
+r <- 9
+n <- 1000
+ttm <- 10
+
+#Punto donde se quiere calcular la recta tangente (r*,p)
+y <- 50
+p <- precio(n =n, r = r,ttm = ttm, y = y)
+
+y1 <- y-5
+y2 <- y+5
+
+# Pendiente de la recta tangente
+a <- pendiente(cupon=r,rendimiento=y,nominal=n,tiempo_vencimiento=ttm)
+
+# Punto de corte con el eje y de la recta tangente
+b <- p-a*(y/100)
+
+ren_2 <-seq(20,80,0.1) # Vector de rentabilidades
+
+Y <- a*(ren_2/100) + b # Alturas de la recta tangente
+
+P_2<-c() # Precios dados las tasas de rendimiento
+for(i in 1:length(ren_2)){ 
+  P_2 <- c( P_2, precio(n = 1000, r = 9,ttm = 10, y = ren_2[i]))
+}
+
+datos_5 <- data.frame(x=ren_2, y_1=P_2, y_2=Y)
+f<-ggplot(data = datos_5, aes(x,y_1)) + geom_line(colour="blue",size=1)+
+  geom_line(aes(x,y_2), colour="orange",size=0.7)+
+  geom_vline(xintercept = y,linetype="dashed")+
+    geom_vline(xintercept = y1,linetype="dashed",colour="green",size=0.8)+
+    geom_vline(xintercept = y2,linetype="dashed",colour="green",size=0.8)+
+  geom_hline(yintercept = p,linetype="dashed")+
+  geom_point(size = 2, color = "red",aes(x = y, y = p))+
+  labs(title = "Precio vs Rendimiento", x="Tasas de Rendimiento", y="Precio",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+En dicho gráfico se calculó la recta tangente de la función precio para un rendimiento igual a 50%, las líneas verdes representan una dispersión del 10% del rendimiento definido, dentro de las líneas verdes vemos que tanto la recta tangente como la curva están muy próximas, es decir la duración se aproxima muy bien al precio, y a medida que nos alejamos de estas líneas notamos la diferencia entre las curvas es mayor, esta diferencia viene definida por la convexidad de la curva que define el precio. De Aquí surge esta medida de la variación del precio, conocida como "convexidad" y busca aproximar la curvatura en la relación del precio versus el rendimiento.
+
+### Propiedades de la convexidad
+
+#### 1ª propiedad: el tiempo a vencimiento
+
+_Cuanto mayor sea el tiempo hasta el vencimiento de un bono, mayor será su convexidad_.
+
+Esto se debe a que la convexidad es una medida cuadrática del tiempo $t*(t+1)$, por lo que a mayor $t$ la convexidad será mayor.
+
+El siguiente gráfico nos muestra como se comporta la convexidad con respecto al vencimiento, de un bono de $1.000 nominales, con una tasa cupón y un rendimiento de 5%. Podemos observar como la relación convexidad-tiempo es casi lineal, lo que nos permite concluir que a mayor tiempo hasta el vencimiento, la convexidad del bono será mayor.
+
+```{r,echo=FALSE}
+vencimientos_3 <- seq(1,30,1)
+convexidades <- c()
+for(i in 1:length(vencimientos_3)){
+    convexidades <- c(convexidades, convexidad(r = 0.05,y = 0.05, n = 1000, ttm = vencimientos_3[i]))
+   }
+
+datos_6 <- data.frame(convexidades, vencimientos_3)
+
+f<- ggplot(datos_6, aes(x = vencimientos_3, y = convexidades)) +
+    geom_line(color = "green") + labs(title = "Convexidad Vs. Vencimiento",
+       subtitle = "1ª Propiedad",x="Vencimiento", y="Convexidad",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+#### 2ª propiedad: la tasa cupón
+
+_A mayor tasa cupón menor es la convexidad_.
+
+La convexidad crece fuertemente cuando la tasa cupón es muy baja, hasta llegar al extremo de que el cupón sea cero, en donde la convexidad alcanzará su mayor valor. Dicha relación negativa no es proporcional, ya que la variación se da a una tasa creciente como podemos observar en el siguiente gráfico. 
+
+```{r,echo=FALSE}
+cupones_2 <- seq(0,20,1)
+
+convexidades_2 <- c()
+for(i in 1:length(cupones_2)){
+    convexidades_2 <- c(convexidades_2, convexidad(r = cupones_2[i], y = 5, n = 1000, ttm = 30))
+   }
+
+datos_7 <- data.frame(convexidades_2, cupones_2)
+
+f<- ggplot(datos_7, aes(x = cupones_2, y = convexidades_2)) +
+    geom_line(color = "green") + labs(title = "Convexidad Vs. Vencimiento",
+       subtitle = "2ª Propiedad",x="Tasa Cupón", y="Convexidad",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+
+```
+
+Dada esta segunda propiedad, y para visualizar de mejor manera la influencia del tamaño del cupón en la convexidad del bono, veamos el siguiente ejemplo: si se comprara un bono A de cupón cero a 16,14 años con un rendimiento del 5% y un bono B a 30 años de tasa cupón de 5% e igual rendimiento, observermos la influencia del cupón en la convexidad de los mismos, dado que ambos bonos tienen una duración igual.
+
+```{r,echo=FALSE}
+
+nombres <- c("Cupón","Vencimiento","Duración", "Convexidad")
+bono_A <- c(0,16.14,16.14,convexidad(r = 0, y = 5, n = 1000, ttm = 16.14))
+bono_B <- c(5,30,DMAC(precio = 1000, cupon = 5, rendimiento = 5, nominal = 1000, tiempo_vencimiento = 30),convexidad(r = 5, y = 5, n = 1000, ttm = 30))
+
+Tabla_10 <- data.frame(nombres, Bono_A = bono_A, Bono_B = bono_B)
+colnames(Tabla_10) <- c("", "Bono A", "Bono B")
+kable(Tabla_10, caption = "Variables de los Bonos A y B")
+
+```
+
+Se puede determinar que la convexidad y la duración son independientes entre si. La duración es una medida de primer orden, mientras que la convexidad es una medidad de segundo orden, por lo que una tiene mayor peso que otra en la inmunización de carteras. Es decir, ante bonos con igual duración, el de mayor convexidad será el que mayor beneficio aporte al gestor del portafolio ante el riesgo de tipos de interés.
+
+#### 3ª propiedad: la tasa de rendimiento
+
+_A mayor tasa de rendimiento, la convexidad decrece_.
+
+Al igual que en la duración, la relación de la convexidad con respecto al rendimiento es inversa. Esto tiene que ver con el hecho de que ante tasas mayores de reinversión, los flujos serán mayores y la recuperación del capital se llevara a cabo en un período de tiempo menor. 
+
+Siguiendo con el mismo bono utilizado para los ejemplos anteriores, veamos que pasa con la convexidad a medida que el rendimiento varia entre 1% y 20%.
+
+```{r,echo=FALSE}
+rendimientos_4 <- seq(1,20,1)
+
+convexidades_3 <- c()
+  for(i in 1:length(rendimientos_4)){
+    convexidades_3 <- c(convexidades_3, convexidad(r =5, y =rendimientos_4[i], n = 1000, ttm = 30))
+  }
+
+datos_8 <- data.frame(convexidades_3, rendimientos_4)
+
+f<- ggplot(datos_8, aes(x = rendimientos_4, y = convexidades_3)) +
+    geom_line(color = "green") + labs(title = "Convexidad Vs. Rendimiento",
+       subtitle = "3ª Propiedad",x="Rendimiento", y="Convexidad",
+       caption = "http://synergy.vision/" )+ vision 
+credits(f)
+```
+
+Como se puede observar en el gráfico la convexidad y el rendimiento guardan una relación inversa, es decir, a una mayor tasa de rendimiento menor será la convexidad del bono.
+
+#### Convexidad Vs. tasa cupón y tiempo a vencimiento.
+
+Tal como se evaluó en las propiedades, la convexidad aumenta a medida que el tiempo hasta el vencimiento es mayor, sin embargo dicho crecimiento aumenta a tasas crecientes cuando la tasa cupón es menor. 
+
+Veamos dicha relación en el siguiente gráfico, el cual muestra la convexidad de un bono a 30 años con un rendimiento de 5% en función de la tasa cupón y el tiempo hasta el vencimiento.
+
+```{r,echo=FALSE}
+Grafico3D <-c()
+z<-c()
+for (j in seq(1,30,1)) {
+  for (i in seq(0,10,0.1)) {
+    Grafico3D <- c(Grafico3D,c(i,j,convexidad(r = i, y = 5, n = 1000,ttm = j)))
+  }
+}
+z<-matrix(Grafico3D,ncol = 3,byrow=TRUE)
+colnames(z)<-c("c","t","convexidad")
+zdf<-as.data.frame(z)
+scatter3D(zdf$c, zdf$t, zdf$convexidad,
+          pch= ".", bty="f", ticktype = "detailed", type="p", cex = 2, colkey=FALSE, phi = 20, theta = 45, expand = 0.5, xlab = "TC", ylab = "Tiempo", zlab="Convexidad",main="Convexidad Vs. Tasa Cupón Vs. Tiempo")
+```
+
+Como podemos observar en el gráfico, cuando la tasa cupón es mayor la relación entre la convexidad y el tiempo es casi lineal, mientras que cuando es baja, el crecimiento de la convexidad respecto al tiempo se da de una forma más acelerada.
+
+#### Convexidad Vs. rendimiento y tiempo
+
+La convexidad de un bono incrementa con el tiempo hasta el vencimiento, pero disminuye a medida que incrementa el rendimiento. La convexida se torna con mayor sensibilidad respecto al tiempo a medida que el rendimiento es más bajo, sin embargo su influencia es escasa cuando el rendimiento es muy grande.
+
+```{r,echo=FALSE}
+
+Grafico3D <-c()
+z<-c()
+  for (j in seq(1,30,1)) {
+    for (i in seq(0,10,0.1)) {
+      Grafico3D <- c(Grafico3D,c(i,j,convexidad(r = 5, y = i, n = 1000,ttm = j)))
+    }
+
+  }
+
+z <- matrix(Grafico3D,ncol = 3,byrow=TRUE)
+colnames(z)<-c("r","t","convexidad")
+zdf<-as.data.frame(z)
+scatter3D(zdf$r, zdf$t, zdf$convexidad,
+          pch= ".", bty="f", ticktype = "detailed", type="p", cex = 2, colkey=FALSE, phi = 20,
+          theta = 45, expand = 0.5, xlab = "Rendimiento", ylab = "Tiempo",
+          zlab="Convexidad",main="Convexidad Vs. Rendimiento Vs. Tiempo")
+
+```
+
+#### Convexidad Vs. rendimiento y tasa cupón
+
+A mayor rendimiento y tasa cupón la convexidad del bono decrece notablemente debido a que ambas variables inciden a favor. 
+
+```{r,echo=FALSE}
+Grafico3D <-c()
+z<-c()
+  for (j in seq(0,20,0.1)) {
+    for (i in seq(0,10,0.1)) {
+      Grafico3D <- c(Grafico3D,c(i,j,convexidad(r = j, y = i, n = 1000,ttm = 30)))
+    }
+
+  }
+
+z <- matrix(Grafico3D,ncol = 3,byrow=TRUE)
+colnames(z)<-c("r","c","convexidad")
+zdf<-as.data.frame(z)
+scatter3D(zdf$r, zdf$c, zdf$convexidad,
+          pch= ".", bty="f", ticktype = "detailed", type="p", cex = 2, colkey=FALSE, phi = 20,
+          theta = 45, expand = 0.5, xlab = "Rendimiento", ylab = "Tasa Cupón",
+          zlab="Convexidad",main="Convexidad Vs. Rendimiento Vs. Tasa Cupón",sub = "Gráfico 6.6",
+          col.sub = "red")
+```
+
+Cuando la tasa cupón es muy baja el efecto de reducción de la convexidad es creciente, por el hecho de que se comienzan a reinvertir los flujos. Cuando la tasa cupón pasa de 0 a 1%, el efecto es de mayor apreciación y luego pierde apreciación a medida que la tasa va aumentando.
+
+\newpage
+# Bibliografía
+
+- Bodie, Zvi / Kane, Alex / Alan Marcus. Essentials of Investments, novena edición. McGraw-Hill Irwin. 
+
+- Bodie, Zvi / Kane, Alex / Alan Marcus. Investments, decima edición. McGraw-Hill Irwin. 
+
+- Atehortúa Granados, John Alexander. Mercado de capitales y portafolios de inversión. Ediciones de la U.
+
+- Majka, Richard P. Series 7, Securities Licensing Exam. Exam Cram 2005.
+
+- Ferri, Michael G / Fabozzi, Frank / Modigliani, Franco. Mercados e Instituciones financieras. Pearson Prentice Hall. 
+
+- Alexander, Gordon / Sharpe, William / Jeffery, Bailey. Fundamentos de Inversiones, teoría y práctica. Pearson Prentice Hall.
+
+- Fabozzi, Frank / Mann, Steven. The Handbook of fixed income securities. MacGrow-Hill.
+
+- Vasicek, Oldrich Alfons / Merton, Robert C. Finance, Economics and Mathematics. John Wiley & Sons, Inc.
+
+- Ibañez, Alfredo / Barbas, Alfredo. When can you immunize a bond portfolio?. Journal Banking & Finance, december 2018. 
+
+- Mascareñas, Juan. Monografías de Juan Mascareñas sobre Finanzas Corporativas. Universidad Complutense de Madrid.
+
+- Veale, Stuart R. The investor´s guidebook to Fixed Income Investments. Pearson Prentice Hall.

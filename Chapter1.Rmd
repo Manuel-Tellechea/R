@@ -1,0 +1,1472 @@
+---
+output: 
+  pdf_document:
+      toc: yes
+      includes:
+        before_body: ./frontpage.tex
+        in_header: ./preambulo.tex
+        after_body: ./lastpage.tex
+  html_document: default
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+library(formattable)
+library(lubridate)
+library(ggplot2)
+library(ggpmisc)
+library(RColorBrewer)
+library(knitr)
+library(plot3D)
+library(scatterplot3d)
+library(grid)
+library(gridExtra)
+```
+
+# Precio
+
+El análisis más fundamental que se realiza cuando se invierte, gira en torno a los precios de los valores. Sin embargo, hay que hacer una distinción importante entre el precio de un valor y el valor en sí del mismo. El precio de un valor es la cantidad de dinero que pagamos cuando lo compramos o la cantidad de dinero que recibimos cuando lo vendemos. En contraste, el valor se refiere a cuánto vale. Aunque el precio de un valor es el monto que un inversionista está dispuesto a renunciar para obtener el valor y es un monto equivalente al que otro inversionista está dispuesto a recibir en contra parte por este, el valor, sin embargo, para estos dos inversionistas puede ser diferente.
+
+El precio de un valor es el núcleo del análisis de inversión. Por ejemplo, se puede usar el precio de un valor o valores como punto de referencia al tomar decisiones de inversión. Desde el punto de vista del valor fundamental, los inversores se sentirían inclinados a comprar (vender) el valor si su precio es lo suficientemente bajo (más alto) que el valor intrínseco del valor en sí o el valor en función de sus fundamentos. Alternativamente, desde el punto de vista del valor relativo, los inversores estarían dispuestos a comprar o vender el valor si su precio no está alineado con la relación histórica entre valores comparables y el inversor cree que el precio del valor volverá a tender a algún precio medio.
+
+Dada la importancia de los precios en las inversiones, en este curso comenzaremos analizando los precios. Mostraremos cómo obtener y analizar datos de precios de valores sin procesar y cómo se pueden manipular tales datos brutos para adaptarse a algunos análisis básicos usando precios.
+
+## Importando Data del precio díario de una acción.
+
+El primer paso, antes de analizar la data del precio de una acción, es obtenerla de una fuente confiable. En este curso utilizaremos Yahoo Finance, por el hecho de que es pública y gratuita. De esta página podremos obtener el precio de apertura, el precio máximo durante la sesión, el precio mínimo y el volúmen. Existen diferentes maneras de importar la data a `R`, sin embargo durante este curso utilizaremos la manera más estable para hacerlo, la cual es a través de archivos CSV. También podemos utilizar la librería `quantmod`, en la que, utilizando la función `getSymbols` podremos obtener la data de manera directa en `R`. Sin embargo, este segundo método es menos estable, ya que si Yahoo cambia la localización de la data, el comando `getSymbols` dejará de funcionar y habrá que esperar hasta que solucionen el inconveniente con la librería.
+
+## Importando Data del precio de una acción desde Yahoo Finance
+
+Para propósito de nuestro análisis utilizaremos la data del precio de la acción de `Amazon`. Cabe señalar que es indiferente la acción que se seleccione, puesto que la metodología seguirá siendo la misma.
+
+### Paso 1
+
+Para obtener la data de Yahoo Finance se debe conocer el nombre de la compañía o el ticker de la acción. En nuestro caso el ticker de `Amazon` es `AMZN`. 
+
+En el análisis que se realizará a continuación se trabajará con data del precio de la acción en un período de 3 años, a partir del 31 de diciembre de 2010 hasta el 31 de diciembre de 2013.
+
+1- En el browser, debemos colocar la siguiente dirección: `http://finance.yahoo.com`.
+
+2- Ingresar el ticker de la acción o el nombre de la compañía en "Quote Lookup" o "Enter Symbol". En nuestro caso ingresaremos `AMZN`, y esta nos llevará a la página donde sale la última información de la acción de Amazon.
+
+3- Una vez en dicha página, ubicamos la pestaña de precios históricos (Historical Prices).
+
+4- La sección de precios históricos nos permite establecer un rango de fechas para obtener la data específica que deseamos. En nuestro caso ingresaremos el rango desde el 31 de diciembre de 2010 hasta el 31 de diciembre de 2013.
+
+5- Una vez cargada la data, debemos hacer link en la pestaña de descargar data (Download), escoger la opción de Guardar como..., y ubicar el directorio de trabajo de `R` para que el archivo se guarde en el mismo. 
+
+Es importante señalar que el archivo no debe abrirse en Excel, debido a que este modifica el formato de fechas al abrirlo, lo que hace incompatible posteriormente el código de `R` para realizar la importación de la Data, con el archivo.
+
+El tipo de archivo que se descargará será de tipo `CSV`.
+
+### Paso 2
+
+Para cargar la Data del archivo CSV en `R` utilizaremos el comando `read.csv`. Debemos establecer el parámetro `header = TRUE` para que `R` sepa que la primera fila corresponde al encabezado de la data. Para conocer las primeras `6` observaciones de la data de `AMZN` utilizamos la función `head` y para conocer las últimas `6` utilizamos la función `tail`.
+
+```{r}
+data.AMZN <- read.csv("Data/AMZNYahoo.csv", header = TRUE)
+head(data.AMZN)
+```
+
+```{r}
+tail(data.AMZN)
+```
+
+### Paso 3
+
+Pese a que la variable fecha de la data parezca una fecha, `R` no la reconoce como tal sino más bien como un `factor`, por tal razón debemos transformar la misma en un objeto de tipo fecha. Utilizando la función `class` podemos observar como `R` trata a la variable `Date`.
+
+```{r}
+class(data.AMZN$Date)
+```
+
+Un factor también se conoce como una variable categórica, que es un tipo de variable que se utiliza para agrupar los datos en grupos. Por ejemplo, si queremos dividir los días en días laborables y fines de semana. Podemos crear una variable categórica que nos permita saber si un día en particular es un día laborable o si es un fin de semana.
+
+En vista a que no vamos a utilizar la `Date` como una variable categórica, debemos convertir la misma en una variable con clase de fecha. Para modificar la variable `Date` en una variable con clase `Date`, utilizamos la función `as.Date`. Es muy importante verificar como está establecido el formato de la fecha en el archivo para poderle especificar a `R` como debe leer la fecha. Como vimos anteriormente, el formato utilizado es año-mes-día, por lo que debemos especificar a `R` que el formato a utilizar será `%Y-%m-%d`.
+
+```{r}
+date <- as.Date(data.AMZN$Date, format = "%Y-%m-%d")
+head(date)
+tail(date)
+```
+
+Para verificar la clase de la variable, utilizamos nuevamente la función `class` en el objeto `date`.
+
+```{r}
+class(date)
+```
+
+### Paso 4
+
+El siguiente paso será combinar la variable `date` con `data.AMZN`. Para ello reemplazaremos la variable `Date` en `data.AMZN` con la variable creada `date`. Como bien sabemos, `data.AMZN` tiene `6` variables y cientos de columnas y una de esas variables es `date` la cual es un `factor`, es por esa razón que debemos reemplazarla con la nueva variable `date` para poder leer dicha columna como fechas. Para poder agregar esa nueva variable a `data.AMZN`, utilizamos la función `cbind`, que nos permite combinar dos objetos.
+
+```{r}
+data.AMZN <- cbind(date, data.AMZN[,-1])
+head(data.AMZN)
+```
+
+
+```{r}
+tail(data.AMZN)
+```
+
+Es importante observar que para eliminar la variable original de `Date` en `data.AMZN`, utilizamos [, -1]. Los corchetes después del nombre del objeto de datos nos permiten identificar las filas (introduciendo términos antes de la coma) y las columnas (introduciendo los términos después de la coma) queremos mantener o eliminar.
+
+Además, el orden con el que aplicamos cbind es importante. Esto le dice a R qué objeto va a la izquierda y qué objeto va a la derecha. Si hubiéramos invertido la orden anterior, tendríamos la variable de fecha siguiendo la variable Adj.Close. Todavía podemos llamar a las variables por su nombre de variable, pero no podremos usar los mismos números de columna para llamar a los datos. En R, hay casos en los que los nombres de las variables pueden y no pueden utilizarse. Por lo tanto, tenemos que tener cuidado con el posicionamiento de las variables en el futuro.
+
+### Paso 5
+
+En este paso ordenaremos la data en orden cronológico. La data que se importa de Yahoo Finance aparece en orden cronológico inverso. Sin embargo es más común trabajar con la data en orden cronológico. Para ello podemos utilizar el comando `order`. Si queremos especificar el orden de acuerdo a una variable en específico utilizamos los corchetes []. 
+
+```{r}
+data.AMZN <- data.AMZN[order(data.AMZN$date),]
+head(data.AMZN)
+```
+
+```{r}
+tail(data.AMZN)
+```
+
+### Paso 6
+
+El siguiente paso es convertir  `data.AMZN` de un objeto `data.frame` a un objeto `xts`. A pesar de que un objeto de clase `data.frame` es flexible, para manipular data financiera utilizaremos objetos de clase `xts` (eXtensible Time Series) los cuales permiten utilizar muchas funciones valiosas cuando se analizan series de tiempo. 
+
+Para convertir un `data.frame` en un objeto `xts` es necesario utilizar la librería `xts`. Para cargar la misma a `R` utilizamos el comando `library`.
+
+```{r}
+library(xts)
+```
+
+Una vez cargada la librería ahora se puede cambiar el objeto `data.frame` a un objeto `xts`, utilizando el comando `xts`. El comando xts toma dos argumentos que denotan cuáles son las columnas de datos, que son las columnas 2-7, y cuál es la columna de índice. Las columnas de datos son las columnas de `data.AMZN` que contiene los datos. La columna índice será la columna de `date` que se usará como índice en una serie temporal, y se encuentra en la columna 1. La columna de índice va precedida por el argumento `order.by =` que significa que queremos que el orden de los datos siga el de la columna `date`.
+
+```{r}
+data.AMZN <- xts(data.AMZN[, 2:7], order.by = data.AMZN[, 1])
+head(data.AMZN)
+```
+
+```{r}
+tail(data.AMZN)
+```
+
+```{r}
+class(data.AMZN)
+```
+
+### Paso 7
+
+Si queremos conocer el nombre de las variables de `data.AMZN` utilizamos el comando `names` y para renombrarlos utilizamos el comando `paste` junto con un vector de nombres (`c()`).
+
+```{r}
+names(data.AMZN)
+```
+
+```{r}
+names(data.AMZN) <- paste(c("AMZN.Open", "AMZN.High", "AMZN.Low",
+                            "AMZN.Close", "AMZN.Adjusted", "AMZN.Volume"))
+head(data.AMZN)
+```
+
+```{r}
+tail(data.AMZN)
+```
+
+Existen otras formas para importar data a `R`. Una de ellas es utilizando la función `getSymbols` de la librería `quantmod`. Es importante colocar el argumento `auto.assign = FALSE` para que permita visualizar los resultados de utilizar los comandos `head` o `tail`.
+
+```{r, eval=FALSE}
+library(quantmod)
+```
+
+```{r, eval=FALSE}
+alt.data.AMZN <- getSymbols("AMZN", from = "2010-12-31", to = "2013-12-31", auto.assign = FALSE)
+head(alt.data.AMZN)
+```
+
+```{r, eval=FALSE}
+class(alt.data.AMZN)
+```
+
+## Revisando la data
+
+Hay al menos unas pruebas básicas que podemos aplicar a la data que obtenemos, que nos permite asegurarnos que la data obtenida este correcta y completa.
+
+### Plotting
+
+El test más básico que podemos utilizar para asegurarnos que la data esté completa es graficar la misma. Para realizarlo utilizamos el comando `plot`. 
+
+```{r}
+plot(data.AMZN$AMZN.Close)
+```
+
+Este gráfico no muestra nada obviamente sospechoso con los datos de precios de cierre de AMZN. Parece que hay operaciones cotidianas, rebotes del precio de la acción hacia arriba y hacia abajo sin manchas planas obvias.
+
+Para ilustrar como se vería un plot de una data incompleta, vamos a eliminar las observaciones número 400-500. 
+
+```{r}
+data.missing <- data.AMZN[-400:-500,]
+plot(data.missing$AMZN.Close)
+```
+
+En el gráfico anterior se puede ver inmediatamente que los datos están incompletos (denotado por la línea plana). Ante esa señal es necesario revisar los datos u obtenerlos nuevamente.
+
+### Revisando las dimensiones
+
+Otra forma de chequear la data es observar el número de filas y columnas o la dimensón del objeto. En el caso de la data que se obtiene de Yahoo Finance, el número de filas y columnas indica cuantas variables hay en la data. En el caso de Yahoo Finance el número de variables es 6. De manera que si encontramos más o menos variables podemos darnos cuenta de que hay algún error en la data. 
+
+En el caso de las series de tiempo, el número de filas representa las fechas de la observación. La mayoría de los precios de las acciones muestran solamente los días de trading. Entonces una buena regla para revisar es asumir aproximadamente 252 días de trading en un año para determinar cuántos datos debes esperar aproximadamente.
+
+Si por ejemplo se está trabajando con una data de 3 años se deberían esperar 756 observaciones (252 días de trading * 3 años). Para conocer la dimensión de un objeto utilizamos el comando `dim`.
+
+```{r}
+dim(data.AMZN)
+```
+
+El número de la izquierda nos indica el número de observaciones y el de la derecha el número de columnas, que coincide con el número esperado. La diferencia del número de las observaciones debe corresponder a días feriados.
+
+### Revisar el resumen de las estadisticas
+
+Otra útil herramienta para revisar la data, es ver el resumen de las estadísticas de la data. Para eso utilizamos la función `summary`. Dicho comando nos arrojará el valor mínimo, el máximo, el rango interquartil, la media y la mediana. De esta manera podremos observar si hay un valor inusual en el volumen o un valor absurdo de los precios.
+
+```{r}
+summary(data.AMZN)
+```
+
+### Revisar el Ticker
+
+En ocasiones el ticker de la compañía puede ser engañoso porque no es un identificador que permanece invariable o que sea derivado estrictamente del nombre de la compañía. Por ejemplo, el ticker de `Hewlett-Packard`, usualmente llamada `HP`, es `HPQ`; el ticker `HP` corresponde a una compañía de petróleo y gas llamada `Helmerich & Payne`. Además las firmas reciclan los ticker y pueden cambiarlos de una compañía a otra. Por otra parte, el ticker de las compañías puede variar entre una fuente financiera u otra. Por ejemplo, el ticker del `S&P 500 Index` en `Yahoo Finance` es `GSPC`, mientras que en `Bloomberg` se consigue como `SPX`.
+
+## Manipulación básica de data
+
+Cuando importamos data, probablemente terminemos obteniendo una cantidad mayor de datos de los que realmente necesitamos. Trabajar con una data mayor a la que necesitamos torna el análisis complicado. Por ello se recomienda trabajar con la data en el orden que se necesite y usando las observaciones realmente necesarias. A continuación describiremos el uso de algunas funciones que nos permitirán un manejo adecuado de la data.
+
+### Borrar o mantener una fila
+
+Para manipular subconjuntos de datos de un objeto es necesaro utilizar los corchetes ([]) posterior al nombre del objeto. Los términos dentro de los corchetes deben ir separados por coma. El primer término antes de la coma se refiere a las filas, mientras que el segundo término se refiere a las columnas.
+
+Para mantener una fila debemos colocar el número o los números de las mismas antes de la coma. Si lo que se desea es borrarla se debe colocar un signo negativo delante del número ([-1, ]). 
+
+Supongamos que deseamos solamente conocer la información del precio de la acción del primer día del período de la data.
+
+```{r}
+AMZN.onlyFirst <- data.AMZN[1, ]
+AMZN.onlyFirst
+```
+
+Ahora suponga que se desea eliminar la primera observación para dejar la data con fechas del período 2011-2013. 
+
+```{r}
+AMZN.delFirst <- data.AMZN[-1,]
+head(AMZN.delFirst)
+```
+
+### Mantener la primera y última fila
+
+En algunos casos puede que sólo necesitemos conocer la información de la primera y la última observación. Por ejemplo si deseamos conocer la variación del precio de la acción en un período de 3 años (2011-2013), no es necesario ver todas las observaciones de la data. Para eso podemos utilizar el operador `c(...)`. Dentro de él podemos colocar las filas que deseamos, solamente debemos separarlas por coma. 
+
+El comando `nrow` nos permite conocer el número de filas que tiene un objeto de data. Sin embargo, si lo utilizamos dentro del comando `c(1, nrow(data.AMZN))`, `R` lo interpretará como mantener la primera y la última fila de la data.
+
+```{r}
+data.AMZN[c(1, nrow(data.AMZN)),]
+```
+
+### Manteniendo las celdas contiguas
+
+Si se quiere obtener las observaciones de la primera semana de enero 2011, que sería desde la segunda observación hasta las siguientes 6 observaciones. Podemos utilizar el operador `c(...)` y llamarlo de la siguiente manera `[c(2,3,4,5,6),]`, sin embargo ante un número de observaciones más grande esto podría no ser tan práctico. En ese caso podemos utilizar los dos puntos `:`, y llamarlo de la siguiente manera `[2:6,]`.
+
+```{r}
+AMZN.first.week<-data.AMZN[2:6,]
+AMZN.first.week
+```
+
+De igual manera podemos combinar comandos para obtener los datos. Combinando `nrow` y `:`, podemos extraer las observaciones que deseamos. Supongamos que queremos obtener los últimos 30 cierres del precio en la data. Combinando ambos comandos `(nrow(data.AMZN)-29)`, `nrow` devuelve el número de filas en los datos y luego restamos 29 de ese número para obtener el trigésimo día de negociación a partir de finales de 2013. La dimensión de la salida a continuación confirma que sustraer 29 nos da un total de 30 observaciones. A la derecha de los dos puntos `:`, colocamos `nrow(data.AMZN)`, que devuelve el número total de observaciones en los datos. Combinando los dos resultados en las últimas 30 observaciones. Todo este argumento debe ser introducido a la izquierda de la coma dentro de los corchetes.
+
+```{r}
+AMZN.last30<-data.AMZN[((nrow(data.AMZN)-29)):nrow(data.AMZN),]
+AMZN.last30
+```
+
+### Manteniendo las primeras 3 filas y la última fila
+
+Hasta ahora veniamos mostrando los datos intermedios de salida, para guiarnos al implementar los modelos, utilizando los comandos `head` y `tail`. Sin embargo, cada salida tiene un alto consumo de espacio, ya que cada uno de estos comandos genera seis observaciones. Como alternativa, se puede mostrar únicamente las primeras tres observaciones y la última observación de los datos.
+
+La razón para esto es que la primera y la última observación nos dicen el rango de fechas que usamos. Luego, las primeras tres observaciones nos dicen colectivamente, en la mayoría de los casos, la frecuencia de los datos (por ejemplo, diariamente, semanalmente, mensualmente). Así que de ahora en adelante, sólo mostraremos la salida de Yahoo Finance utilizando esta técnica siempre que sea posible y siempre que no perdamos ninguna información relevante al hacerlo.
+
+Para implementar esto, utilizaremos el operador `c(...)`. Primero, vamos a mantener las filas 1-3 (es decir, 1:3). A continuación, le diremos al programa que también queremos mantener la última fila (es decir, nrow (data.AMZN)).
+
+```{r}
+data.AMZN[c(1:3,nrow(data.AMZN)),]
+```
+
+Como podemos observar, los datos anteriores muestran que estamos utilizando datos de precios de acciones diarias. El 1 y el 2 de enero de 2011 fueron días correspondiente a fin de semana, por lo tanto, no son días de negociación.
+
+### Manteniendo y borrando una columna
+
+Para nuestros propósitos, las columnas representan nombres de variables. Usando el comando `names`, podemos ver cuáles son los nombres de las variables.
+
+```{r}
+names(data.AMZN)
+```
+
+Ahora bien si desearamos mantener sólo una columna, por ejemplo, la información del precio de cierre de la acción Amazon. Podemos realizarlo de dos maneras, la primera es utilizando el signo `$` y la segunda es utilizando los corchetes `[]`.
+
+```{r}
+AMZN.onlyPrice <- data.AMZN$AMZN.Close
+AMZN.onlyPrice[c(1:3,nrow(AMZN.onlyPrice)),]
+
+AMZN.onlyPrice2 <- data.AMZN[, 4]
+AMZN.onlyPrice2[c(1:3,nrow(AMZN.onlyPrice2)),]
+```
+
+Ahora podemos ver un ejemplo de cuándo queremos eliminar una columna. Supongamos que queremos crear un gráfico de precios de apertura, máximo, mínimo y cierre (OHLC) con volumen (lo implementaremos más adelante). La quinta observación en nuestros datos es el cierre ajustado, que no necesitaremos para dicha aplicación. Por lo tanto, podemos poner un signo negativo delante del número de columna para eliminar la columna específica. Es decir, tecleamos [, -5].
+
+```{r}
+AMZN.delAdjPrice<-data.AMZN[,-5]
+AMZN.delAdjPrice[c(1:3,nrow(AMZN.delAdjPrice)),]
+```
+
+### Manteniendo columnas no contiguas
+
+En muchas aplicaciones, probablemente necesitemos mantener más de una variable para nuestro análisis. En el caso de que las columnas no sean contiguas, utilizaremos el comando `c(...)`. Dentro de este colocaremos los números de las columnas separados por coma. Supongamos que deseamos comparar los precios de apertura y los de cierre de la acción Amazon.
+
+```{r}
+AMZN.OpenClose<-data.AMZN[,c(1,4)]
+AMZN.OpenClose[c(1:3,nrow(AMZN.OpenClose)),]
+```
+
+### Manteniendo columnas contiguas
+
+En el caso de que las columnas sean contiguas utilizaremos el signo `:` para separar los números de las columnas. De ésta manera le daremos a entender a `R` que queremos mantener las columnas `desde:hasta`. Supongamos que deseamos analizar los precios máximos y mínimos alcanzados en cada sesión de la acción de Amazon.
+
+```{r}
+AMZN.PriceHigLow<-data.AMZN[,2:3]
+AMZN.PriceHigLow[c(1:3,nrow(AMZN.PriceHigLow)),]
+```
+
+### Manteniendo columnas contiguas y no contiguas
+
+En ocasiones podemos querer mantener datos de columnas contiguas y algunas que no sean contiguas. Para ello el comando `c(...)` y dentro de el colocaremos las columnas deseadas separadas por comas. Supongamos nuevamente que queremos crear un gráfico de precio `OHLC` (apertura, alto, bajo, cierre) con volumen. En este caso, no necesitaremos la columna de `adjusted close`, pero esta vez no eliminaremos la columna de `adjusted close`, simplemente seleccionaremos las otras observaciones y la omitiremos.
+
+```{r}
+AMZN.OHLC <-data.AMZN[,c(1:4,6)]
+AMZN.OHLC[c(1:3,nrow(AMZN.OHLC)),]
+```
+
+### Seleccionando subconjuntos de filas y columnas simultáneamente
+
+Hasta ahora, solo hemos trabajado con subconjuntos de filas o de columnas. Sin embargo, es probable que en muchas aplicaciones tengamos que subconjugar tanto las filas como las columnas. Por ejemplo, supongamos que queremos calcular el precio medio ponderado por volumen (VWAP) durante los últimos 30 días de negociación de 2013.
+
+```{r}
+data.vwap<-data.AMZN[((nrow(data.AMZN)-29)):nrow(data.AMZN),c(4,6)]
+data.vwap[c(1:3,nrow(data.vwap)),]
+```
+
+### Seleccionando subconjuntos usando Dates
+
+En muchas aplicaciones financieras, trabajaremos con datos de series de tiempo. En este caso particular, el término series de tiempo se utiliza en el sentido más general como en datos que pueden ser indexados por un cierto intervalo de tiempo, tal como diario, semanal, mensual, trimestral o anual. Como tal, a menudo es más fácil trabajar los datos utilizando las fechas, ya que son más fáciles de recordar, en vista de que tienen algún significado tangible. 
+
+Por ejemplo, sería más fácil usar fechas para un subconjunto de datos en 2012 en lugar de averiguar que tenemos que mantener las filas 254-503 en `data.AMZN`. Además, este último período puede no ser aplicable si nuestros datos no comienzan el 31 de diciembre de 2010.
+
+Supongamos que deseamos conocer los precios de cierre de Amazon del 2012. El enfoque dependerá de si los datos son un objeto `xts` o un objeto `data.frame`.
+
+#### Si los datos son objetos tipo `xts`
+
+En este caso utilizaremos el comando `subset`. Para un objeto `xts`, identificamos la fecha usando el comando `index` ya que la fecha está en el índice del objeto `xts`.
+
+```{r}
+# Veamos que tipo de objeto es
+class(data.AMZN)
+
+# Ahora limitaremos los datos al año 2012 y que solamente tome los precios de cierre 
+xts.2012 <- subset(data.AMZN[,4], index(data.AMZN) >= "2012-01-01" & index(data.AMZN) <= "2012-12-31")
+xts.2012[c(1:3,nrow(xts.2012))]
+```
+
+#### Si los datos son objeto tipo `data.frame`
+
+Lo primero que debemos realizar es convertir la data en un objeto tipo `data.frame`. Una de las razones por la que queremos convertir los datos en un objeto `data.frame` es porque tenemos una columna de fechas. La columna de fechas se crea aplicando el comando de `index` a `data.AMZN`. Antes de poder combinar la columna de fechas con el precio de cierre, es necesario convertir, también, el precio de cierre en un objeto `data.frame`. Entonces, podremos combinar los dos objetos de datos usando el comando `cbind`.
+
+```{r}
+AMZN.2012 <- cbind(index(data.AMZN), data.frame(data.AMZN[,4]))
+AMZN.2012[c(1:3,nrow(AMZN.2012)),]
+```
+
+Una vez creado el `data.frame` ahora queremos cambiar el nombre de la primera variable y luego cambiar el índice en un identificador para el número de observación. Dado que sólo estamos cambiando el nombre de la primera variable, podemos agregar `[1]` después de aplicar el comando `names` a `AMZN.2012`. Para cambiar el índice, usamos el comando `rownames`. Lo que sustituimos por las fechas es una secuencia de números usando el comando `seq`.
+
+```{r}
+names(AMZN.2012)[1]<-paste("date")
+rownames(AMZN.2012)<-seq(1,nrow(AMZN.2012),1)
+AMZN.2012[c(1:3,nrow(AMZN.2012)),]
+```
+
+Ahora estamos listos para realizar el subset de la data.
+
+```{r}
+AMZN.2012<-subset(AMZN.2012, AMZN.2012$date >= 
+                    "2012-01-01"& AMZN.2012$date <= "2012-12-31")
+AMZN.2012[c(1:3,nrow(AMZN.2012)),]
+```
+
+### Convirtiendo precios diarios en precios semanales y mensuales
+
+La data que obtuvimos del portal financiero Yahoo Finance viene expresada en temporalidad diaria. Sin embargo, pudiesemos necesitar expresar dicha data en diferentes temporalidades. Con objetos tipo `xts` se puede realizar esta tarea de manera sencilla.
+
+#### Convirtiendo precios diarios en semanales
+
+Para convertir a data diaria en semanal vamos a utililzar el comando `to.weekly`.
+
+```{r}
+wk<-data.AMZN
+data.weekly<-to.weekly(wk)
+data.weekly[c(1:3,nrow(data.weekly)),]
+```
+
+Como pueden notar, creamos un objeto `wk`. La razón, es porque el comando `to.weekly` tomo el nombre completo del dataset y lo pone en el nombre de la variable, así que por razones de presentación creamos un objeto de nombre corto.
+
+Hay que tener cuenta que los valores del 31 de diciembre de 2010 sólo se basan en un día de negociación, el 31 de diciembre de 2010. Esto no es una "correcta" data semanal a diferencia del resto de las observaciones. Para comprobar que los datos fueron realmente convertidos de manera correcta por el comando `to.weekly`, vamos a revisar los detalles de la primera semana de enero de 2011, que es la segunda observación y es la semana que termina el 7 de enero de 2011. 
+
+```{r}
+data.AMZN[2:6,]
+```
+
+```{r}
+sum(data.AMZN[2:6,6])
+```
+
+Los datos anteriores, muestran la salida de los datos originales, muestra que el precio abierto de la semana fue de `$181.37` el 3 de enero de 2011 y el precio de cierre / ajustado al final de la semana fue `$185.49` el 7 de enero de 2013. El precio alto de la semana es el 7 de enero 2011 fue de `$188.45` y el precio bajo de la semana es el 3 de enero de 2011 y fue de `$181.21`. La última línea de código confirma el volumen de la semana es la suma del volumen de toda la semana de $22.183.400$ de acciones negociadas.
+
+Si comparamos estos resultados con la salida anterior, podemos ver que la data es correcta.
+
+#### Convirtiendo precios darios en mensuales
+
+Para convertir la data diaria en mensual, vamos a utilizar el comando `to.monthly`. El procedimiento es igual al semanal con la diferencia del comando a utilizar. 
+
+```{r}
+mo<-data.AMZN
+data.monthly<-to.monthly(mo)
+data.monthly[c(1:3,nrow(data.monthly)),]
+```
+
+Puede notar el mensaje de error que aparece. El mismo saldrá cada vez que ejecutemos el comando `to.monthly`, ya que el tiempo del objeto parece estar en `Coordinated Universal Time (UTC)`. `UTC` se refiere comunmente a `Greenwich Mean Time (GMT)`. Sin embargo, a efectos de nuestros cálculos, éste tema no los afecta en lo absoluto.
+
+#### Creando gráficos de Velas Japonesas usando Monthly Data
+
+Una de las formas más comunes de presentar datos semanales o mensuales es usar un gráfico de velas. La función `chartSeries` tiene una variedad de opciones integradas de gráficos. Una de esas opciones es generar un gráfico de velas. Sin embargo, necesitaremos primero convertir los datos en un objeto Apertura-Alto-Bajo-Cierre (OHLC). Para ello, tenemos que cargar el paquete `quantmod`.
+
+```{r}
+library(quantmod)
+```
+
+
+Una vez cargada la librería, convertiremos los datos a la clase `OHLC` usando el comando `as.quantmod.OHLC`. `R` necesita que le sea indicado cuáles son los nombres de las columnas en los datos. Hay que tener en cuenta que para evitar cualquier confusión, vamos a eliminar el cierre ajustado de `data.monthly`, así como la observación de diciembre de 2010.
+
+```{r}
+OHLC<-data.monthly[-1,-6]
+AMZN.ohlc <-as.quantmod.OHLC(OHLC,col.names=
+                               c("Open","High","Low","Close","Volume"))
+class(AMZN.ohlc)
+```
+
+
+```{r}
+AMZN.ohlc[c(1:3,nrow(AMZN.ohlc)),]
+```
+
+Ahora realizaremos el plot de `AMZN.ohlc` usando la función `chartSeries`. El tema por defecto es un fondo negro, con velas naranjas y verdes. Sin embargo, el tema puede ser modificado con el argumento `theme`, al igual que el título del gráfico con el argumento `name`. 
+
+```{r}
+chartSeries(AMZN.ohlc, name = "AMZN OHLC")
+```
+
+Como tal, cambiaremos el tema a `white.mono`, de modo que obtengamos un fondo blanco con barras negras. Tenga en cuenta que en `chartSeries, el título del gráfico está controlado por el argumento del nombre (`name`). Por el contrario, recuerde que cuando usa el comando plot, el título del gráfico está controlado por el argumento principal.
+
+```{r}
+chartSeries(AMZN.ohlc, theme="white.mono", name="AMZN OHLC")
+```
+
+La salida del gráfico de velas muestra que hay algunos meses en los que los precios altos y bajos están dentro de un rango estrecho, como mayo de 2011, en el cual el precio de AMZN se negoció dentro de un rango de $\$15,51$ entre $\$190,88$ y $\$206,39$, mientras que el rango es amplio en otros meses, como noviembre de 2013, en el cual el precio de AMZN se negoció dentro de un rango de $\$52,22$ entre $\$341,88$ y $\$394,10$.
+
+## Comparando las ganancias de capital de diferentes valores a través del tiempo
+
+Antes de entrar en este tema, vamos a limpiar todos los objetos que se encuentran en memoria para evitar que utilicemos algún objeto con datos diferentes, que se encuentre cargado en el ambiente de trabajo. Para ver los objetos que se encuentran cargados en memoria utilizamos el comando `ls()` y para borrarlos todos utilaremos el comando `rm(list = ls())`.
+
+```{r}
+ls()
+```
+
+
+```{r}
+rm(list = ls())
+ls()
+```
+
+Ahora que hemos limpiado la memoria, podemos comenzar a comparar las ganancias de capital de múltiples valores a lo largo del tiempo.
+
+Cuando realizamos una inversión, usualmente queremos comparar la misma con diferentes activos y evaluar el desempeño que ha tenido durante un período de tiempo determinado. Supongamos que hicimos una inversión al momento de cerrar el mercado el 31 de diciembre de 2010 en Amazon (AMZN), IBM (IBM), Yahoo (YHOO) y en el índice S&P 500 (^GSPC). Ahora queremos saber cual de estos valores ha tenido un mejor desempeño desde el 31 de diciembre de 2011 hasta el 31 de diciembre de 2013, basado únicamente el la apreciación del precio. 
+
+Para el valor inicial, decidimos usar `$1` como punto de partida, por lo que es más fácil interpretar los valores en el gráfico como un cambio porcentual en el precio del valor. Este gráfico se conoce a veces como un gráfico de precios normalizado.
+
+### Paso 1
+
+Debemos importar la data de cada uno de los valores, tal como lo hicimos anteriormente con Amazon.
+
+```{r}
+data.AMZN<-read.csv("Data/AMZNYahooNEW.csv",header=TRUE)
+date<-as.Date(data.AMZN$Date,format="%Y-%m-%d")
+data.AMZN<-cbind(date, data.AMZN[,-1])
+data.AMZN<-data.AMZN[order(data.AMZN$date),]
+data.AMZN<-xts(data.AMZN[,2:7],order.by=data.AMZN[,1])
+names(data.AMZN)<-paste(c("AMZN.Open","AMZN.High",
+                          "AMZN.Low","AMZN.Close","AMZN.Volume","AMZN.Adjusted"))
+data.AMZN[c(1:3,nrow(data.AMZN)),]
+```
+
+```{r}
+data.AAPL<-read.csv("Data/AAPLYahoo.csv",header=TRUE)
+date<-as.Date(data.AAPL$Date,format="%Y-%m-%d")
+data.AAPL<-cbind(date, data.AAPL[,-1])
+data.AAPL<-data.AAPL[order(data.AAPL$date),]
+data.AAPL<-xts(data.AAPL[,2:7],order.by=data.AAPL[,1])
+names(data.AAPL)<-paste(c("AAPL.Open","AAPL.High",
+                          "AAPL.Low","AAPL.Close","AAPL.Volume","AAPL.Adjusted"))
+data.AAPL[c(1:3,nrow(data.AAPL)),]
+```
+
+```{r}
+data.IBM<-read.csv("Data/IBMYahoo.csv",header=TRUE)
+date<-as.Date(data.IBM$Date,format="%Y-%m-%d")
+data.IBM<-cbind(date, data.IBM[,-1])
+data.IBM<-data.IBM[order(data.IBM$date),]
+data.IBM<-xts(data.IBM[,2:7],order.by=data.IBM[,1])
+names(data.IBM)<-paste(c("IBM.Open","IBM.High","IBM.Low","IBM.Close",
+                         "IBM.Volume","IBM.Adjusted"))
+data.IBM[c(1:3,nrow(data.IBM)),]
+```
+
+```{r}
+data.GSPC<-read.csv("Data/GSPCYahoo.csv",header=TRUE)
+date<-as.Date(data.GSPC$Date,format="%Y-%m-%d")
+data.GSPC<-cbind(date, data.GSPC[,-1])
+data.GSPC<-data.GSPC[order(data.GSPC$date),]
+data.GSPC<-xts(data.GSPC[,2:7],order.by=data.GSPC[,1])
+names(data.GSPC)<-paste(c("GSPC.Open","GSPC.High",
+                          "GSPC.Low","GSPC.Close","GSPC.Volume","GSPC.Adjusted"))
+data.GSPC[c(1:3,nrow(data.GSPC)),]
+```
+
+### Paso 2
+
+Ahora procederemos a combinar la Data en un `dataset`. Para este ejemplo en particular sólo nos interesa el precio de cierre, así que únicamente conservaremos los datos con el sufijo `Close`. Comenzaremos con los precios de cierre de Amazon en un objeto llamado `Close.Prices` y posteriormente utilizaremos `cbind` para combinar los precios de cierres de los otros valores. 
+
+```{r}
+Close.Prices<-data.AMZN$AMZN.Close
+Close.Prices<-cbind(Close.Prices,data.GSPC$GSPC.Close,
+                    data.AAPL$AAPL.Close,data.IBM$IBM.Close)
+Close.Prices[c(1:3,nrow(Close.Prices)),]
+```
+
+El uso del comando `cbind` aquí funciona a la perfección ya que estos valores tienen precios en cada día de negociación. Por lo tanto, sabemos que todas las fechas estarán alineadas. En general, sin embargo, es una buena práctica aplicar las técnicas que aprendimos anteriormente en el capítulo para asegurarse de que estamos combinando los datos correctamente.
+
+### Paso 3
+
+Una vez combinados los precios de cierres de los valores, ahora los convertiremos en un `data.frame`. A continuación, cambiaremos el nombre de las variables en el archivo `multi.df` para que sea más fácil de usar. También cambiaremos el índice para indicar el número de observación.
+
+```{r}
+multi.df<-cbind(index(Close.Prices), data.frame(Close.Prices))
+names(multi.df)<-paste(c("date","AMZN","GSPC","AAPL","IBM"))
+rownames(multi.df)<-seq(1,nrow(multi.df),1)
+multi.df[c(1:3,nrow(multi.df)),]
+```
+
+### Paso 4
+
+Cuando pensamos en la apreciación del capital, normalmente pensamos en calcular el cambio en el precio todos los días. Para ello debemos acumular los cambios diarios de precios a través del tiempo y eso debería ser suficiente para comparar el rendimiento de los cuatro valores. Sin embargo, con la implementación de programas podemos llegar al mismo resultado final, a través de diferentes maneras, usando técnicas más simples.
+
+Una manera equivalente de implementar tal cálculo es creando un índice, de cada una de las acciones, con valores que igualen el precio diario de cada acción dividido entre el precio de la acción el 31 de diciembre de 2010.
+
+Por ejemplo, veamos que el precio de Amazon el 3 de enero de 2011 fue de `$184,22`, primer día de negociación luego del 31 de diciembre de 2010, y es `2,34%` superior al precio inicial de nuestra data de `$180`. Luego, el precio el 4 de enero de 2011 es de `$185,01` y es `0,04%` superior al precio del día anterior. El precio acumulado desde diciembre 2010 hasta el 4 de enero de 2011 es `2,78%` superior. Este resultado podemos obtenerlo dividiendo el precio del día entre el precio inicial.
+
+```{r}
+multi.df$AMZN.idx <- multi.df$AMZN/multi.df$AMZN[1]
+multi.df$GSPC.idx <- multi.df$GSPC/multi.df$GSPC[1]
+multi.df$AAPL.idx <- multi.df$AAPL/multi.df$AAPL[1]
+multi.df$IBM.idx <- multi.df$IBM/multi.df$IBM[1]
+options(digits = 5)
+multi.df[c(1:3,nrow(multi.df)),]
+```
+
+### Paso 5
+
+Graficar la apreciación de capital de cada acción hace que podamos visualizar de manera más sencilla los resultados obtenidos. Para graficarlos, debemos usar el comando `plot` utilizando las variables que tienen el sufijo `ìdx`. El comando `plot` requiere que se le indiquen los valores de `x` y `y`. Para la variable `x` utilizaremos la fecha, mientras que para la variable `y` utilizaremos el índice `S&P 500`. No hay ninguna diferencia alguna con respecto a la variable que se grafique primero, simplemente aparecerá listada por encima de las otras. Entre los argumentos que vamos a modificar en nuestro gráfico estarán: el tipo de plot  (`type="l"`), las etiquetas de los ejes `x` e `y` con `xlab` y `ylab` respectivamente, el color de la línea (`col`), el tipo de línea `lty`, que puede ser sólido (`1`) o punteada (`2` o `3`) y el grosor de la línea (`lwd`). Por último colacaremos el título del gráfico con el argumento `main`.
+
+```{r}
+plot(x=multi.df$date,y=multi.df$GSPC.idx, type="l",
+     xlab="Date", ylab="Value of Investment ($)",
+     col="black", lty=1,lwd=2,
+     main="Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013")
+```
+
+Ahora adañiremos los siguientes tres plot del resto de los valores al gráfico que realizamos previamente. Para hacer eso utilizaremos el comando `lines`. Al igual que en el gráfico anterior, en el eje `x` colocaremos la variable `Date` y en el eje `y` los índices de las acciones `AMZN, IBM` y `YHOO`. Sin embargo, para diferenciar las líneas estableceremos colores diferentes para cada uno.
+
+```{r}
+plot(x=multi.df$date,y=multi.df$GSPC.idx, type="l",
+     xlab="Date", ylab="Value of Investment ($)",
+     col="black", lty=1,lwd=2,
+     main="Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013")
+
+lines(x=multi.df$date,y= multi.df$AMZN.idx, col="orange", lty=2, lwd=1)
+
+lines(x=multi.df$date, y= multi.df$IBM.idx, col="gray", lty=1, lwd=1)
+
+lines(x=multi.df$date, y=multi.df$AAPL.idx, col="green", lty=2, lwd=1)
+```
+
+Alternativamente, también podemos representar los datos gráficamente utilizando la librería `ggplot2`. Esta librería nos brinda una serie de opciones mucho más amplias a la hora de graficar. 
+
+```{r, include=FALSE}
+mod_name<-"Financial Data and Models in R"
+credits<-function(f) {
+  grid.arrange(f,right=textGrob(paste0(mod_name," (C) Synergy Vision - 2018"),
+                                gp=gpar(fontsize=7, fontface="italic", col="gray75"),
+                                rot=90, just = "centre", vjust=-2))#c(0.58,-2)))
+
+}
+vision<-theme_bw()+
+  theme(
+    #####EJES
+    axis.line =   element_line(colour = "black", 
+                               size = 0.5),#líneas de los ejes
+    axis.text.x = element_text(colour = "gray10",
+                               size = 8 ,hjust = 0.5, 
+                               vjust = 0.5),#Número del eje x
+    axis.text.y = element_text(colour = "gray10",
+                               size = 8,  hjust = 0.5,
+                               vjust = 0.5),#Número del eje y
+    axis.ticks =  element_line(colour = "black",
+                               size = 0.1), #Lineas de los números en los ejes
+    axis.title.x = element_text(face="plain", 
+                                colour = "black",size = 12, 
+                                vjust = 1), #Titulo del eje x
+    axis.title.y = element_text(face="plain", colour = "black",
+                                size = 12, angle = 90, 
+                                vjust = 0.5),#Título del eje y 
+    axis.ticks.length = unit(0.3, "lines"), #tamaño de la linea de los números de los ejes
+    #####FONDO
+    panel.background =  element_rect(fill = "gray95", colour = NA), #fondo
+    panel.border =      element_rect(fill = NA,
+                                     colour=NA), #Lienas de los bordes
+    panel.grid.major =  element_line(colour = "white", 
+                                     size = 0.2),#Lineas de los número de los ejes
+    panel.grid.minor =  element_line(colour = "gray98",
+                                     size = 0.5),#lineas medias entre los números de los ejes
+    #####    
+    strip.background =  element_rect(fill = "blue", colour = NA), 
+    strip.text.x = element_text(size = 12),
+    strip.text.y = element_text(size = 20, angle = -90),
+    ####Caracteristicas de fondo de la imagen
+    plot.background = element_rect(colour = NA,
+                                   fill = NA),#Color del borde y color de fondo.
+    plot.title = element_text(colour="black",size = 18,
+                              face = "bold", hjust = 0.5, 
+                              vjust = 0.5), #Título de la imagen
+    plot.margin = unit(c(0.5, 1, 1, 0.5), "lines"), #Margen de la imagen con los extremos.
+    plot.subtitle = element_text(colour="black",
+                                 size = 12, face = "plain",
+                                 hjust = 0, vjust = 0.5), #subtítulo
+    plot.caption =element_text(face="italic", colour = "gray70",
+                               size = 8, vjust = 0, hjust = 1),
+    ####Leyenda
+    legend.background = element_rect(colour=NA), 
+    legend.key =        element_rect(fill = "gray98", colour = NA, size = 0.25),
+    legend.key.size =   unit(1.2, "lines"),
+    legend.text =       element_text(size = 8),
+    legend.title =      element_text(size = 8, face = "plain", hjust = 0.5),
+    legend.position =   "right"
+)
+
+```
+
+```{r}
+f<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$GSPC.idx)) +
+    geom_line(color = "black", size=1) + labs(title = "Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/" ) +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx), 
+              colour="orange",size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx), 
+              colour="blue",size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx),
+              colour="green",size=0.4, linetype="dashed") + vision 
+
+credits(f)
+```
+
+Dado que el valor al 31 de diciembre de 2010 se ha normalizado a `$1`, podemos agregar una línea horizontal al gráfico que denota el valor de inversión inicial de `$1`. Esta línea nos ayuda a separar visualmente los períodos en los que el valor generó una ganancia de capital y períodos en los que el valor generó una pérdida de capital. La línea horizontal en `$1` se crea utilizando el comando `abline` con la opción `h=1`.
+
+```{r}
+plot(x=multi.df$date,y=multi.df$GSPC.idx, type="l",
+     xlab="Date", ylab="Value of Investment ($)",
+     col="black", lty=1,lwd=2,
+     main="Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013")
+
+lines(x=multi.df$date,y= multi.df$AMZN.idx, col="orange", lty=2, lwd=1)
+
+lines(x=multi.df$date, y= multi.df$IBM.idx, col="gray", lty=1, lwd=1)
+
+lines(x=multi.df$date, y=multi.df$AAPL.idx, col="green", lty=2, lwd=1)
+
+abline(h=1,lty=1,col="black")
+```
+
+En `ggplot2` dicha línea se agrega con el comando `geom_vline`.
+
+```{r}
+
+f<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$GSPC.idx)) +
+    geom_line(color = "black", size=1) + labs(title = "Value of $1 
+     Investment in AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/" ) +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx), 
+              colour="orange",size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx), 
+              colour="blue",size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx), 
+              colour="green",size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + vision 
+credits(f)
+
+
+```
+
+Finalmente adherimos la leyenda al gráfico utilizando el comando `legend`. Lo primero que le indicamos al comando es que establezca la leyenda en el tope del lado izquierdo, segundo le indicamos el orden como aparecerán listadas las acciones y finalmente los colores, tipos de líneas y anchos.
+
+```{r}
+plot(x=multi.df$date,y=multi.df$GSPC.idx, type="l",
+     xlab="Date", ylab="Value of Investment ($)",
+     col="black", lty=1,lwd=2,
+     main="Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013")
+
+lines(x=multi.df$date,y= multi.df$AMZN.idx, col="orange", lty=2, lwd=1)
+
+lines(x=multi.df$date, y= multi.df$IBM.idx, col="gray", lty=1, lwd=1)
+
+lines(x=multi.df$date, y=multi.df$AAPL.idx, col="green", lty=2, lwd=1)
+
+abline(h=1,lty=1,col="black")
+
+legend("bottomright", c("AMZN","IBM","AAPL","S&P 500 Index"),
+       col=c("orange","gray","green","black"), lty=c(2,1,2,1),
+       lwd=c(1,1,1,2))
+```
+
+En ggplot, la manera de agregar la leyenda sería la siguiente: 
+
+```{r}
+
+f<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$GSPC.idx)) +
+    geom_line(aes(colour = "S&P500"), size=1) + labs(title = "Value of $1 
+     Investment in AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx, 
+                  colour="AMAZON"), size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx, 
+                  colour="IBM"),size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, 
+                  colour="APPLE"),size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values = 
+                          c("S&P500" = "black", "AMAZON" = "orange",
+                            "IBM" = "blue", "APPLE" = "green")) + vision 
+credits(f)
+
+```
+
+
+### Paso 6
+
+Como podemos observar en el gráfico anterior, los valores de algunas acciones se cortan. Esto se debe a que el rango del eje `y` difiere entre las acciones, ya que toma los valores del primer valor que se utiliza en el plot. Para solucionar esto procederemos a verificar, en primera instancia, cuál es el valor mínimo y máximo de nuestros datos. Para ello utilizaremos el comando `range`.
+
+```{r}
+y.range <-range(multi.df[,6:9])
+y.range
+
+```
+
+Una vez determinados los valores, ahora pasaremos la varible `y.range` como argumento en `ylim` dentro del plot.
+
+```{r}
+plot(x=multi.df$date,y=multi.df$GSPC.idx, type="l",
+     xlab="Date", ylim = y.range,
+     ylab="Value of Investment ($)",
+     col="black", lty=1,lwd=2,
+     main="Value of $1 Investment in
+     AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013")
+
+lines(x=multi.df$date,y= multi.df$AMZN.idx, col="orange", lty=2, lwd=1)
+
+lines(x=multi.df$date, y= multi.df$IBM.idx, col="gray", lty=1, lwd=1)
+
+lines(x=multi.df$date, y=multi.df$AAPL.idx, col="green", lty=2, lwd=1)
+
+abline(h=1,lty=1,col="black")
+
+legend("topleft", c("AMZN","IBM","AAPL","S&P 500 Index"),
+       col=c("orange","gray","green","black"), lty=c(2,1,2,1),
+       lwd=c(1,1,1,2))
+```
+
+En el caso de los gráficos de ggplot, vemos que no hay problemas con respecto a la escala de los valores. 
+
+```{r}
+f<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$GSPC.idx)) +
+    geom_line(aes(colour = "S&P500"), size=1) + labs(title = "Value of $1 
+     Investment in AMZN, IBM, YHOO, and the S&P 500 Index
+     December 31, 2010 - December 31, 2013",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx, 
+                  colour="AMAZON"), size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx, 
+                  colour="IBM"),size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, 
+                  colour="APPLE"),size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values = 
+                          c("S&P500" = "black", "AMAZON" = "orange",
+                            "IBM" = "blue", "APPLE" = "green")) + vision 
+credits(f)
+
+```
+
+## Diferentes maneras para mostrar un gráfico normalizado
+
+Hay otras maneras de presentar un gráfico normalizado comparando el desempeño de diferentes valores. Una forma alternativa podría ser separar cada uno de los cuatro valores en cuatro mini-gráficos. En cada gráfico, podemos destacar una acción al tener la línea para esa acción en un color diferente, mientras que los otros tres valores tienen el mismo color. Podemos entonces trazar las cuatro mini-gráficos en un gráfico grande, así que no perderemos ninguna información.
+
+### Paso 1
+
+En primera instancia debemos asegurarnos de tener suficiente espacio en el margen externo para adherir un título general para el gráfico. Para lograr esto, usaremos el comando `par` usando la opción `oma`. El tercer argumento dentro del `oma` representa el margen superior.
+
+```{r, eval=FALSE}
+par(oma=c(0,0,3,0))
+```
+
+### Paso 2
+
+Usando el comando `par` y la opción `mfrow`, le indicaremos a `R` que deseamos una salida de 2 (filas) x 2 (columnas) para los siguientes 4 plots que crearemos.
+
+```{r}
+par(mfrow = c(2,2))
+```
+
+### Paso 3
+
+En este paso se procederá a crear los 4 gráficos. En cada uno de ellos graficaremos la acción principal en última instancia. Por ejemplo, el primer plot se refiere a la acción de Amazon. En ese sentido, el último comando de `lines` tendrá el valor de Amazon, que será dibujado con una línea negra más gruesa que las demás líneas. Las otras tres líneas serán coloreadas en gris. Similarmente, el segundo plot se enfocará en IBM, el tercer plot lo hará con Yahoo, y el cuarto plot se enfocará en el índice del S&P 500.
+
+```{r}
+plot(x=multi.df$date, xlab="", y=multi.df$AAPL.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="Amazon Stock")
+lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$AMZN.idx,col="black",lwd=2)
+abline(h=1)
+
+plot(x=multi.df$date, xlab="", y=multi.df$AAPL.idx,
+     ylim=y.range, ylab="", type="l", col="gray", main="IBM Stock")
+lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$IBM.idx,col="black",lwd=2)
+abline(h=1)
+
+plot(x=multi.df$date, xlab="", y=multi.df$GSPC.idx,
+     ylim=y.range, ylab="", type="l", col="gray", main="Apple Stock")
+lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$AAPL.idx,col="black",lwd=2)
+abline(h=1)
+
+plot(x=multi.df$date, xlab="", y=multi.df$AAPL.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="S&P 500 Index")
+lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+lines(x=multi.df$date,y=multi.df$GSPC.idx,col="black",lwd=2)
+abline(h=1)
+```
+ 
+
+### Paso 4
+
+En este paso, simplemente creamos cuatro plots. Para cada uno, graficamos la acción principal de último. Por ejemplo, el primer diagrama trata de la acción de Amazon.com, por lo tanto, el comando de las últimas líneas tiene el valor de índice de AMZN, que se dibujará con una línea negra que es relativamente más gruesa que las otras líneas. Las otras tres líneas son todas de color gris. De manera similar, la segunda trama se centra en IBM, la tercera trama se centra en Yahoo y la cuarta trama se centra en el índice S&P 500.
+
+
+```{r}
+par(oma=c(0,0,3,0))
+par(mfrow = c(2,2))
+plot(x = multi.df$date, xlab = "", y=multi.df$AAPL.idx,
+     ylim = y.range, ylab = "", type = "l", col = "gray",
+     main = "Amazon Stock")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab = "", y=multi.df$AAPL.idx,
+     ylim=y.range, ylab="", type="l", col="gray",
+     main="IBM Stock")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab="", y=multi.df$GSPC.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="Apple Stock")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$AAPL.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab="", y=multi.df$AAPL.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="S&P 500 Index")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="black",lwd=2)
+    abline(h=1)
+```
+
+### Paso 5 
+
+Cada uno de los cuatro mini gráficos anteriores tiene su propio título, pero el gráfico global pudiera ser más informativo si añadimos un título general. Esto lo hacemos utilizando el comando `title` y la opción `outer = T`. Esta última opción aplica al título los márgenes que establecimos en el paso 1.
+
+```{r}
+par(oma=c(0,0,3,0))
+par(mfrow = c(2,2))
+plot(x = multi.df$date, xlab = "", y=multi.df$AAPL.idx,
+     ylim = y.range, ylab = "", type = "l", col = "gray",
+     main = "Amazon Stock")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab = "", y=multi.df$AAPL.idx,
+     ylim=y.range, ylab="", type="l", col="gray",
+     main="IBM Stock")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab="", y=multi.df$GSPC.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="Apple Stock")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$AAPL.idx,col="black",lwd=2)
+    abline(h=1)
+    
+plot(x=multi.df$date, xlab="", y=multi.df$AAPL.idx, ylim=y.range,
+     ylab="", type="l", col="gray", main="S&P 500 Index")
+    lines(x=multi.df$date,y=multi.df$AMZN.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$IBM.idx,col="gray")
+    lines(x=multi.df$date,y=multi.df$GSPC.idx,col="black",lwd=2)
+    abline(h=1)
+title1="Value of $1 Invested in Amazon, IBM, Yahoo, and the Market"
+title2="December 31, 2010 - December 31, 2013"
+title(main=paste(title1,"\n",title2),outer=T)
+```
+
+Para realizar este paso, utilizando la librería `ggplot2`, el procedimiento es bastante similar. La diferencia radica en que tenemos que implementar la función `multiplot` y pasarle como parámetros los 4 gráficos creados. El código de dicha función se puede revisar a continuación:
+
+```{r}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), 
+                                               ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+```{r}
+
+f<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$GSPC.idx)) +
+    geom_line(aes(colour = "S&P500"), size=1) + labs(title = "S&P 500",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx, colour="AMAZON"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx, colour="IBM"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, colour="APPLE"),
+              size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values = 
+                          c("S&P500" = "black", "AMAZON" = "grey",
+                            "IBM" = "grey", "APPLE" = "grey")) + vision 
+credits(f)
+
+f2<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$AMZN.idx)) +
+    geom_line(aes(colour = "Amazon"), size=1) + labs(title = "Amazon",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$GSPC.idx, colour="S&P500"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx, colour="IBM"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, colour="APPLE"),
+              size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values =
+                          c("Amazon" = "black", "S&P500" = "grey",
+                            "IBM" = "grey", "APPLE" = "grey")) + vision 
+credits(f2)
+
+f3<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$IBM.idx)) +
+    geom_line(aes(colour = "IBM"), size=1) + labs(title = "IBM",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$GSPC.idx, colour="S&P500"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AMZN.idx, colour="Amazon"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, colour="APPLE"),
+              size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values =
+                          c("IBM" = "black", "S&P500" = "grey", 
+                            "Amazon" = "grey", "APPLE" = "grey")) + vision 
+credits(f3)
+
+f4<- ggplot(multi.df, aes(x = multi.df$date, y = multi.df$AMZN.idx)) +
+    geom_line(aes(colour = "Amazon"), size=1) + labs(title = "Amazon",
+       x="Date", y="Value of Investment ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(multi.df$date,multi.df$GSPC.idx, colour="S&P500"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$IBM.idx, colour="IBM"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(multi.df$date,multi.df$AAPL.idx, colour="APPLE"),
+              size=0.4, linetype="dashed") +
+    geom_hline(yintercept = 1 ,colour="red",size=0.8) + 
+    scale_colour_manual("Acciones", values =
+                          c("Amazon" = "black", "S&P500" = "grey", 
+                            "IBM" = "grey", "APPLE" = "grey")) + vision 
+credits(f4)
+
+multiplot(f, f2, f3, f4, cols=2)
+```
+
+## Análisis Técnico
+
+El análisis técnico utiliza los gráficos para estudiar el comportamiento de los precios de los valores y el volumen de datos con el fin de pronosticar las tendencias futuras. El estudio del precio de los valores y el volumen nos da una medida de los cambios en la oferta y la demanda del valor en particular. Por ejemplo, un precio en alza de las acciones de Amazon puede indicar que la demanda excede la oferta, mientras que una caída en el precio de la misma acción puede indicar que la oferta excede la demanda. 
+
+El análisis técnico se utiliza principalmente para determinar la tendencia durante las primeras etapas, determinar cuándo entrar a una posición en favor de la tendencia y cuándo cerrar la misma. De igual manera el análisis técnico nos permite determinar cuándo el análisis realizado es incorrecto y cuándo la posición debe ser cerrada. 
+
+Como estrategia, el beneficio del análisis técnico depende de la capacidad de identificar tendencias y la capacidad de captarlas  durante las primeras etapas de la misma. Además, los indicadores técnicos pueden ser interpretados de manera distinta por diferentes analistas técnicos, según sea su filosofía de inversión.
+
+Existen tres grandes grupos de indicadores técnicos: (i) indicador de tendencia, (ii) indicador de volatilidad e (iii) indicador de momento. A continuación veremos un ejemplo de cada tipo. 
+
+Debemos tener en cuenta que tanto los ejemplos anteriores, como muchos de los indicadores técnicos pueden ser implementados utilizando la función `chartSeries` en `R`, que utilizamos anteriormente para crear el gráfico Open-High-Low-Close (OHLC). Sin embargo, el objetivo de este curso es que se aprendamos a implementar por nuestra cuenta cada uno de ellos.
+
+### Indicador de Tendencia: Cruce de Promedios Móviles Simples (SMA)
+
+Uno de los indicadores de tendencia más utilizados en el análisis técnico, es el promedio móvil simple (SMA). La SMA se calcula tomando el promedio del precio de un determinado valor, durante un cierto número de periodos. Su nombre proviene del hecho de que este tipo de promedio considera a todos los valores por igual, independientemente de su cercanía o lejanía del precio más reciente. 
+
+A partir de este indicador surgen distintas estrategias de inversión. Una de ellas es el cruce de medias móviles, la cual veremos a continuación, que utiliza dos líneas de SMA, a corto y a más largo plazo, y permite tomar decisiones de inversión cuando las líneas se cruzan.
+
+A continuación trabajaremos con los promedios móviles de 50 días para términos de corto plazo y de 200 días para términos de largo plazo. En vista de que estamos interesados en tomar decisiones durante el presente, es posible que no sea necesaria una serie de datos extremadamente larga. Vamos a demostrar cómo implementar un cruce de dos SMA para las acciones de Amazon desde el año 2012 al año 2013.
+
+#### Paso 1 
+
+Como ya hemos importado los datos del precio de las acciones de Amazon en data.AMZN, solo necesitamos extraer el precio de cierre de ese objeto de datos. 
+
+```{r}
+AMZN.sma<-data.AMZN[,4]
+AMZN.sma[c(1:3,nrow(AMZN.sma)),]
+```
+
+#### Paso 2
+
+Para calcular la media móvil, usamos la función `rollmeanr` y debemos establecer la duración `k = 50` para la media móvil de 50 días y `k = 200` para la media móvil de 200 días. Debemos tener en cuenta que las tres primeras observaciones debajo de `sma50` y `sma200` son `NA` ya que `R` solo reporta los datos que comienzan en la 50ª y la 200ª observación, respectivamente.
+
+```{r}
+AMZN.sma$sma50<-rollmeanr(AMZN.sma$AMZN.Close,k=50)
+AMZN.sma$sma200<-rollmeanr(AMZN.sma$AMZN.Close,k=200)
+AMZN.sma[c(1:3,nrow(AMZN.sma)),]
+```
+
+Esto se debe a que se requieren las primeras 50 observaciones para calcular el primer promedio móvil de 50 días (es decir, las primeras 49 observaciones para `sma50` serán `NA).
+
+```{r}
+AMZN.sma[48:52,]
+```
+
+De manera similar, se requieren las primeras 200 observaciones para calcular el primer promedio móvil de 200 días (es decir, las primeras 199 observaciones para `sma200` serán `NA`).
+
+```{r}
+AMZN.sma[198:202,]
+```
+
+
+#### Paso 3
+
+Tal como nos lo exige nuestro ejemplo, debemos seleccionar la data correspondiente al periodo 2012-2013.
+
+```{r}
+AMZN.sma2012<-subset(AMZN.sma, index(AMZN.sma)>="2012-01-01")
+AMZN.sma2012[c(1:3,nrow(AMZN.sma2012)),]
+```
+
+#### Paso 4
+
+Para asegurarnos de tener el rango completo en el eje, usamos el comando `range` para encontrar los valores mínimo y máximo en los datos de `AMZN.sma2012`. Debemos tener en cuenta que se debe colocar en argumento `na.rm = TRUE` para que el comando de rango ignore cualquier valor de `NA`.
+
+```{r}
+y.range<-range(AMZN.sma2012,na.rm=TRUE)
+y.range
+par(mfrow=c(1,1))
+plot(x=index(AMZN.sma2012), xlab="Date",
+     y=AMZN.sma2012$AMZN.Close,
+     ylim=y.range, ylab="Price ($)", type="l",
+     main="Amazon - Simple Moving Average January 1,
+     2012 - December 31, 2013")
+lines(x=index(AMZN.sma2012),y=AMZN.sma2012$sma50)
+lines(x=index(AMZN.sma2012),y=AMZN.sma2012$sma200,lty=2)
+legend("topleft", 
+       c("Amazon Price","50-Day Moving Average",
+         "200-Day Moving Average"),
+       lty=c(1,1,2))
+```
+
+Veamos el mismo gráfico, utilizando la librería `ggplot2`.
+
+```{r}
+y.range<-range(AMZN.sma2012,na.rm=TRUE)
+y.range
+par(mfrow=c(1,1))
+
+# Para poder utilizar la función ggplot debemos
+# convertir el objeto AMZN.sma2012 en un dataframe
+
+AMZN.sma2012.dataframe <- data.frame(AMZN.sma2012)
+
+f<- ggplot(AMZN.sma2012.dataframe, 
+           aes(x = index(AMZN.sma2012),
+               y = AMZN.sma2012.dataframe$AMZN.Close)) +
+  geom_line(aes(colour = "Amazon"), size=1) +
+  labs(title = "Amazon - Simple Moving Average January 1,
+       2012 - December 31, 2013",x="Date",
+       y="Price ($)",
+       caption = "https://synergy.vision/") +
+    geom_line(aes(index(AMZN.sma2012),
+                  AMZN.sma2012.dataframe$sma50, colour="SMA 50"),
+              size=0.4, linetype="dashed") +
+    geom_line(aes(index(AMZN.sma2012),
+                  AMZN.sma2012.dataframe$sma200,
+                  colour="SMA 200"),size=0.4, linetype="dashed") +
+    scale_colour_manual("Precios", 
+                        values = c("Amazon" = "black",
+                                   "SMA 50" = "orange", 
+                                   "SMA 200" = "blue")) + vision 
+
+credits(f)
+```
+
+Si la media móvil de 50 días cruza por encima de la media móvil de 200 días, se denomina un cruce alcista, puede tomarse como un indicador para entrar en largo sobre la acción. Por el contrario, si la media móvil de 50 días cruza por debajo de la media móvil de 200 días, que se conoce como cruce bajista, puede tomarse como una señal para vender la acción.
+
+### Indicador de Volatilidad: Bandas de Bollinger
+
+Uno de los indicadores más utilizados para evaluar la volatilidad del precio de un valor son las Bandas de Bollinger. Este indicador está formado por tres componentes principales: el primer componente es un promedio móvil simple de 20 días (SMA). El segundo componente es una banda superior, que representa una distancia de dos desviaciones estándar por encima de la SMA de 20 días. El tercer componente es una banda inferior, que representa una distancia de dos desviaciones estándar por debajo de la SMA de 20 días. Las Bandas de Bollinger se consideran indicadores de volatilidad porque las bandas se ensanchan (estrechan) con más (menos) volatilidad en el stock. Cuando las bandas se estrechan, se puede usar como una señal de que la volatilidad está a punto de aumentar. Veamos ahora como aplicar las Bandas de Bollinger al precio de la acción de Amazon en 2013.
+
+#### Paso 1 
+
+Como ya hemos importado los datos del precio de las acciones de Amazon en data.AMZN, solo necesitamos extraer el precio de cierre de ese objeto de datos. 
+
+```{r}
+AMZN.bb <-data.AMZN[,4]
+AMZN.bb[c(1:3,nrow(AMZN.sma)),]
+```
+
+#### Paso 2
+
+Similar al cálculo implementado para el cálculo de la SMA, usamos el comando `rollmeanr` con `k = 20` para calcular el promedio móvil de 20 días. Para la desviación estándar, usamos el comando `rollapply`, que nos permite aplicar una función de forma continua. Aquí, `FUN = sd` le indica a `R` que la función que queremos aplicar es la desviación estándar y `width = 20` le indica a `R` que es una desviación estándar de 20 días la que queremos calcular.
+
+```{r}
+AMZN.bb$avg <- rollmeanr(AMZN.bb$AMZN.Close,k=20)
+AMZN.bb$sd <- rollapply(AMZN.bb$AMZN.Close,width=20,FUN=sd,fill=NA)
+AMZN.bb[c(1:3,nrow(AMZN.bb)),]
+```
+
+Debido a que estamos usando un promedio móvil de 20 días y una desviación estándar continua, tendremos `NA` por debajo de `avg` y `sd`. La vigésima observación es el 28 de enero de 2011.
+
+```{r}
+AMZN.bb[18:22,]
+```
+
+### Paso 3
+
+Ahora seleccionaremos únicamente la data que queremos mostrar (2013).
+
+```{r}
+AMZN.bb2013 <- subset(AMZN.bb, 
+                  index(AMZN.bb) >= "2013-01-01")
+AMZN.bb2013[c(1:3, nrow(AMZN.bb2013)),]
+```
+
+#### Paso 4
+
+En este paso calcularemos las bandas del indicador, que se ubican a una distancia de dos desviaciones estándar del promedio. Por ejemplo: el 2 de enero de 2013 la banda estará ubicada en los $262,083\ (= 253,1670\ + (2 \times 4,457978))$, mientras que la banda inferior estará ubicada en los $244,2510\ (=253,1670\ - (2 \times 4,457978))$.
+
+```{r}
+AMZN.bb2013$sd2up <- AMZN.bb2013$avg + 2 * AMZN.bb2013$sd
+AMZN.bb2013$sd2down <- AMZN.bb2013$avg - 2 * AMZN.bb2013$sd 
+AMZN.bb2013[c(1:3,nrow(AMZN.bb2013)),]
+```
+
+#### Paso 5
+
+El último paso será graficar. Cuando tenemos que trazar múltiples líneas, tendríamos que determinar el rango de valores posibles para el eje y. Tenga en cuenta que no deseamos incluir en el cálculo del rango los valores en la columna `sd`. Por lo tanto, excluimos la Columna 3 cuando usamos la función de `range`.
+
+```{r}
+y.range<-range(AMZN.bb2013[,-3],na.rm=TRUE)
+y.range
+```
+
+```{r}
+plot(x=index(AMZN.bb2013), xlab="Date", y=AMZN.bb2013$AMZN.Close,
+     ylim=y.range, ylab="Price ($)", type="l", lwd=3, 
+     main="Amazon - Bollinger Bands (20 days, 2 deviations) 
+     January 1, 2013 - December 31, 2013")
+
+lines(x=index(AMZN.bb2013),y=AMZN.bb2013$avg,lty=2)
+lines(x=index(AMZN.bb2013),y=AMZN.bb2013$sd2up,col="gray40")
+lines(x=index(AMZN.bb2013),y=AMZN.bb2013$sd2down,col="gray40")
+legend("topleft",
+       c("Amazon Price","20-Day Moving Average","Upper Band",
+         "Lower Band"),
+       lty=c(1,2,1,1),lwd=c(3,1,1,1),
+       col=c("black","black","gray40","gray40"))
+```
+
+```{r}
+y.range<-range(AMZN.bb2013[,-3],na.rm=TRUE)
+y.range
+
+# Para poder utilizar la función ggplot debemos
+# convertir el objeto AMZN.sma2012 en un dataframe
+
+AMZN.bb2013.dataframe <- data.frame(AMZN.bb2013)
+
+f<- ggplot(AMZN.bb2013.dataframe, 
+           aes(x = index(AMZN.bb2013),
+               y = AMZN.bb2013.dataframe$AMZN.Close)) +
+  geom_line(aes(colour = "Amazon"), size=1) +
+  labs(title = "Amazon - Bollinger Bands (20 days, 2 deviations) 
+     January 1, 2013 - December 31, 2013", x="Date",
+       y="Price ($)",
+       caption = "https://synergy.vision/") +
+    
+  geom_line(aes(index(AMZN.bb2013),
+                  AMZN.bb2013.dataframe$avg, colour="Banda Media"),
+              size=0.3, linetype="longdash") +
+  
+  geom_line(aes(index(AMZN.bb2013),
+                  AMZN.bb2013.dataframe$sd2up, colour="Banda Superior"),
+              size=0.4, linetype="solid") +
+  
+  geom_line(aes(index(AMZN.bb2013),
+                  AMZN.bb2013.dataframe$sd2down, colour="Banda Inferior"),
+              size=0.4, linetype="solid") +
+  
+  scale_colour_manual("Curvas", values = c("Amazon" = "black",
+                                           "Banda Media" = "orange",
+                                           "Banda Superior" = "green",
+                                           "Banda Inferior" = "green")) + vision 
+
+credits(f)
+```
+
+Suponiendo una distribución normal, dos desviaciones estándar en cualquier dirección de la media deberían cubrir casi la mayoría de los datos. Como muestra el gráfico, para 2013, la mayoría de los precios de cierre cayeron dentro de las Bandas de Bollinger. Para un seguidor de la tendencia, cuando el precio de las acciones de Amazon estaba justo alrededor de la banda superior como en julio de 2013 y noviembre de 2013, esto puede tomarse como una señal de que la acción está sobrecomprada. Por el contrario, cuando el precio de las acciones de Amazon se movió alrededor de la banda inferior, como en agosto de 2013, esto puede tomarse como una señal de que la acción está sobrevendida.
+
+### Indicador de Momento: Índice de Fuerza Relativa (RSI)
+
+Entre los indicadores de momento más utilizados dentro del análisis técnico encontramos al Índice de Fuerza Relativa (Relative Strength Index, "RSI"). Su cálculo típico se basa en un periodo de 14 periodos y su fórmula es:
+
+$$
+RSI = 100 -\ \frac{100}{1 + RS}
+$$
+
+donde $RS$ es igual al promedio al alza dividido por el promedio a la baja; con los promedios calculados utilizando el promedio móvil exponencial de Wilder.
+
+El RSI se usa junto con una línea de sobrecompra y una línea sobreventa. La línea de sobrecompra normalmente se establece en un nivel de 70 y la línea de sobreventa normalmente se establece en un nivel de 30. Se crea una señal de compra cuando el RSI se eleva desde debajo de la línea de sobreventa y cruza la línea de sobreventa. Por el contrario, se crea una señal de venta cuando el RSI cae por encima de la línea de sobrecompra y cruza la línea de sobrecompra. Veamos ahora cómo calcular el RSI para Amazon para el período 2012-2013.
+
+#### Paso 1
+
+Como ya hemos importado los datos del precio de las acciones de Amazon en data.AMZN, solo necesitamos extraer el precio de cierre de ese objeto de datos. 
+
+```{r}
+AMZN.RSI<-data.AMZN[,4]
+AMZN.RSI$delta <- diff(AMZN.RSI$AMZN.Close)
+AMZN.RSI[c(1:3,nrow(AMZN.RSI)),]
+```
+
+En este paso, también calculamos la diferencia en el precio de Amazon utilizando la función `diff`. La diferencia entre el precio de cierre de hoy y el precio de cierre de ayer se indica en la columna denominada `delta`.
+
+#### Paso 2
+
+Procedemos a construir la variable `up`, que toma un valor de 1 si el precio de Amazon subió y cero de lo contrario. También construiremos la variable de `down`, que toma un valor de 1 si el precio de Amazon bajó y cero de lo contrario. Para crear estas variables ficticias usamos la función `ifelse.
+
+```{r}
+AMZN.RSI$up <- ifelse(AMZN.RSI$delta > 0, 1,0)
+AMZN.RSI$down <- ifelse(AMZN.RSI$delta < 0, 1,0)
+AMZN.RSI[c(1:3, nrow(AMZN.RSI)),]
+```
+
+#### Paso 3
+
+A continuación construiremos una serie de precios en días positivos. Para ello multiplicamos los precios de cierre (`AMZN.Close`) con la variable `up`. En un día positivo, `up` será igual a uno, así que `up.val` igualará el precio de cierre de `Amazon.com`. En un día negativo, `up` será igual a cero, por lo que `up.val` será igual a cero. Los precios del día negativo se calculan de manera similar.
+
+```{r}
+AMZN.RSI$up.val <- AMZN.RSI$delta*AMZN.RSI$up
+AMZN.RSI$down.val <- -AMZN.RSI$delta*AMZN.RSI$down
+AMZN.RSI<-AMZN.RSI[-1,]
+AMZN.RSI[c(1:3,nrow(AMZN.RSI)),]
+```
+
+#### Paso 4 
+
+En este paso utilizaremos la función `average` con el comando `FUN = mean`, para calcular los promedios ascendentes y descendentes de 14 días. Esto es similar a usar el comando `rollmeanr` anterior, sin embargo hemos decidido cambiar la función para tener un poco de variedad.
+
+```{r}
+AMZN.RSI$up.first.avg <- rollapply(AMZN.RSI$up.val, width=14,
+                                   FUN=mean,fill=NA,na.rm=TRUE)
+AMZN.RSI$down.first.avg <- rollapply(AMZN.RSI$down.val,
+                                     width=14,FUN=mean,fill=NA,
+                                     na.rm=TRUE)
+AMZN.RSI[c(1:15,nrow(AMZN.RSI)),]
+```
+
+#### Paso 5
+
+En este paso debemos calcular el Promedio móvil exponencial de Wilder para calcular los promedios finales hacia arriba y hacia abajo de 14 días. Para realizar estos cálculos, debemos extraer las columnas `up.val` y `down.val` en `AMZN.RSI` en vectores independientes separados. Posteriormente, necesitamos calcular el Promedio Móvil Exponencial Wilder para los valores al alza y a la baja. Este cálculo promedio supone que el promedio inicial del día anterior tendría un peso de 13 de 14 días y el promedio actual tendrá un peso de uno de cada 14 días. Aplicamos esta misma lógica para el promedio superior y promedio inferior. Los valores calculados en el promedio exponencial de Wilder se incluiran en las columnas `up.avg` y `down.avg, respectivamente.
+
+```{r}
+
+up.val <- as.numeric(AMZN.RSI$up.val)
+down.val <- as.numeric(AMZN.RSI$down.val)
+
+AMZN.RSI$up.avg <- AMZN.RSI$up.first.avg 
+
+for (i in 15:nrow(AMZN.RSI)){
+  AMZN.RSI$up.avg[i] <- ((AMZN.RSI$up.avg[i-1]*13+up.val[i])/14)
+}
+
+AMZN.RSI$down.avg <- AMZN.RSI$down.first.avg 
+
+for (i in 15:nrow(AMZN.RSI)){
+  AMZN.RSI$down.avg[i] <- ((AMZN.RSI$down.avg[i-1]*13+down.val[i])/14)
+}
+
+AMZN.RSI[c(1:20,nrow(AMZN.RSI)),]
+```
+
+#### Paso 6
+
+Ahora podremos calcular el RSI utilizando la fórmula señalada al principio.
+
+```{r}
+AMZN.RSI$RS<-AMZN.RSI$up.avg/AMZN.RSI$down.avg
+AMZN.RSI$RSI<-100-(100/(1+AMZN.RSI$RS))
+AMZN.RSI[c(14:20,nrow(AMZN.RSI)),]
+```
+
+#### Paso 7
+
+Debemos seleccionar la data para mostrar únicamente los datos de 2012 y 2013. También queremos mantener sólamente la variable de RSI (última columna en el objeto de datos), para lo que utilizamos el comando `ncol` que devuelve el número de columnas en el objeto de datos `AMZN.RSI`.
+
+```{r}
+AMZN.RSI2012<-subset(AMZN.RSI[,ncol(AMZN.RSI)], + index(AMZN.RSI)>="2012-01-01")
+AMZN.RSI2012[c(1:3,nrow(AMZN.RSI2012)),]
+```
+
+#### Paso 8
+
+Ahora usamos la función `plot` para trazar el RSI. Sabemos que el rango del eje y tiene que estar entre 0 y 100. Como tal, podemos ingresar estos valores directamente en el argumento `ylim` del comando `plot`.
+
+```{r}
+title1<-"Amazon - Relative Strength Index"
+title2<-"January 2012 - December 2013"
+plot(x=index(AMZN.RSI2012), xlab="Date", y=AMZN.RSI2012$RSI,
+     ylab="RSI (14-Day Moving Average)", ylim=c(0,100),
+     type="l", main=paste(title1,"\n",title2))
+abline(h=c(30,70),lty=2)
+```
+
+Tal como podemos observar, alrededor de abril, mayo y septiembre de 2012 y julio de 2013, se pudo haber tomado como una señal de compra para Amazon ya que el RSI estaba por encima de 70 y cruzó por debajo de 70 durante esos períodos. Por el contrario, alrededor de noviembre de 2012, el RSI estaba por debajo de 30 y cruzó por encima de 30 durante ese período, lo que podría tomarse como una señal de venta.
+
+```{r}
+AMZN.RSI2012.dataframe <- data.frame(AMZN.RSI2012)
+
+f<- ggplot(AMZN.RSI2012.dataframe, 
+           aes(x = index(AMZN.RSI2012),
+               y = AMZN.RSI2012.dataframe$RSI)) +
+  geom_line() +
+  geom_hline(yintercept = c(30,70) ,colour="red",size=0.8) +
+  ylim(c(0,100)) +
+  labs(title = "Amazon - Relative Strength Index,
+       January 2012 - December 2013", x="Date", 
+       y="RSI (14-Day Moving Average)",
+       caption = "https://synergy.vision/") + vision 
+
+credits(f)
+```
+
+Cabe señalar que todos los gráficos que hemos creado hasta ahora, también se pueden replicar utilizando la función `ChartSeries`. Por ejemplo los promedios móviles de 50 y de 200 días se pueden generar de la siguiente manera:
+
+```{r}
+chartSeries(data.AMZN[,4], theme="white.mono",
+            TA=c(addSMA(n=c(50,200))))
+zoomChart("2012::2013")
+```
+
+Para ver los demás indicadores que se pueden replicar con la función `ChartSeries`, pueden visitar [www.quantmod.com](http://www.quantmod.com/examples/charting/)
